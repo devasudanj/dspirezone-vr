@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+.expo/
+dist/
+build/
+
+# Environment secrets
+.env
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp

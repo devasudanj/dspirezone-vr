@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Dspire VR Zone",
+    "slug": "dzexpo-proj",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "landscape",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D0D1A"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0D0D1A"
+      },
+      "package": "com.dspirevr.zone",
+      "versionCode": 1,
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "minSdkVersion": 24,
+      "permissions": [
+        "INTERNET"
+      ],
+      "blockedPermissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [],
+    "extra": {
+      "apiBaseUrl": "https://dspirezone-vr-app.azurewebsites.net",
+      "eas": {
+        "projectId": "4664e1c9-4756-4409-ad7a-66dad16db318"
+      }
+    },
+    "owner": "dspirezone"
+  }
+}

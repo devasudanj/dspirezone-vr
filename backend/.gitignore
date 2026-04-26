@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+
+# Environment secrets
+.env
+
+# SQLite (local dev only – production uses Azure path)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# macOS
+.DS_Store
