@@ -39,6 +39,10 @@ export interface Game {
   category: GameCategory;
   thumbnail_url: string;
   video_url: string | null;
+  youtube_url: string | null;
+  viewable_age: number | null;
+  is_multiplayer: boolean;
+  visit_count: number;
   status: GameStatus;
   created_at: string; // ISO 8601
 }
@@ -77,16 +81,15 @@ export interface Session {
   id: number;
   session_code: string;
   game_id: number;
-  headset_id: number;
   duration_minutes: number;
   created_at: string; // ISO 8601
   game_name: string;
-  headset_code: string;
+  /** All active headsets on which this game is installed. */
+  headset_codes: string[];
 }
 
 export interface SessionCreatePayload {
   game_id: number;
-  headset_id: number;
   duration_minutes: number;
 }
 

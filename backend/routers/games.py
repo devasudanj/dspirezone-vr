@@ -52,6 +52,18 @@ def get_game(game_id: int, db: Session = Depends(get_db)):
     return game
 
 
+@router.post("/{game_id}/visit", response_model=GameRead)
+def record_visit(game_id: int, db: Session = Depends(get_db)):
+    """Increment the visit counter each time the game detail page is viewed."""
+    game = db.get(Game, game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    game.visit_count = (game.visit_count or 0) + 1
+    db.commit()
+    db.refresh(game)
+    return game
+
+
 @router.get("/{game_id}/installations", response_model=list[InstallationRead])
 def list_game_installations(
     game_id: int,

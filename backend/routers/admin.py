@@ -9,12 +9,13 @@ NOTE: In production, protect these endpoints with an API key or
       integrate with the existing admin auth mechanism.
 """
 from __future__ import annotations
+from datetime import date
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Game, Headset
-from schemas import GameCreate, GameRead, HeadsetRead, MediaUploadResponse
+from models import Game, Headset, GameInstallation
+from schemas import GameCreate, GameRead, HeadsetRead, InstallationCreate, InstallationRead, MediaUploadResponse
 from storage import upload_game_media
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -106,3 +107,38 @@ def create_headset(code: str, model: str = "Meta Quest 3", db: Session = Depends
     db.commit()
     db.refresh(headset)
     return headset
+
+
+# ---------------------------------------------------------------------------
+# Installation management
+# ---------------------------------------------------------------------------
+
+@router.post("/installations", response_model=InstallationRead, status_code=201)
+def create_installation(payload: InstallationCreate, db: Session = Depends(get_db)):
+    """Link a game to a headset with an install and expiry date."""
+    from sqlalchemy import select
+    game = db.get(Game, payload.game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail=f"Game {payload.game_id} not found")
+    headset = db.get(Headset, payload.headset_id)
+    if not headset:
+        raise HTTPException(status_code=404, detail=f"Headset {payload.headset_id} not found")
+    inst = GameInstallation(
+        game_id=payload.game_id,
+        headset_id=payload.headset_id,
+        install_date=payload.install_date,
+        expiry_date=payload.expiry_date,
+    )
+    db.add(inst)
+    db.commit()
+    db.refresh(inst)
+    return InstallationRead(
+        id=inst.id,
+        game_id=inst.game_id,
+        headset_id=inst.headset_id,
+        headset_code=inst.headset.code,
+        headset_model=inst.headset.model,
+        install_date=inst.install_date,
+        expiry_date=inst.expiry_date,
+        installation_status="EXPIRED" if inst.is_expired else ("EXPIRING_SOON" if inst.is_expiring_soon else "ACTIVE"),
+    )

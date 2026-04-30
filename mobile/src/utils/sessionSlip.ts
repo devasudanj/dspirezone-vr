@@ -30,6 +30,10 @@ export function buildSessionSlipHtml(session: Session): string {
       ? '1 Hour'
       : `${session.duration_minutes} Minutes`;
 
+  const headsetLabel = session.headset_codes.length > 0
+    ? session.headset_codes.join(', ')
+    : 'N/A';
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -155,8 +159,8 @@ export function buildSessionSlipHtml(session: Session): string {
     <span class="value accent">${escapeHtml(session.game_name)}</span>
   </div>
   <div class="row">
-    <span class="label">Headset</span>
-    <span class="value code">${escapeHtml(session.headset_code)}</span>
+    <span class="label">Available Headsets</span>
+    <span class="value code" style="font-size:13px;letter-spacing:1px">${escapeHtml(headsetLabel)}</span>
   </div>
   <div class="row">
     <span class="label">Duration</span>

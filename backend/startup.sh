@@ -20,6 +20,7 @@ fi
 echo "Python: $(which python) $(python --version)"
 echo "uvicorn: $(which uvicorn 2>/dev/null || echo 'not found')"
 
-# Start the API server — SQLAlchemy creates tables on first request via create_all()
+# Schema migrations are handled inline by main.py at startup.
+# Start the API server
 echo "Starting uvicorn on port 8000..."
 exec python -m uvicorn main:app --host 0.0.0.0 --port 8000

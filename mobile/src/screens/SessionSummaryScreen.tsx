@@ -127,7 +127,11 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
 
           <SlipRow label="Session ID" value={session.session_code} highlight />
           <SlipRow label="Game" value={session.game_name} />
-          <SlipRow label="Headset" value={session.headset_code} highlight />
+          <SlipRow
+            label="Available Headsets"
+            value={session.headset_codes.length > 0 ? session.headset_codes.join(', ') : 'N/A'}
+            highlight
+          />
           <SlipRow label="Duration" value={`${session.duration_minutes} minutes`} />
           <SlipRow label="Date" value={dateStr} />
           <SlipRow label="Time" value={timeStr} />

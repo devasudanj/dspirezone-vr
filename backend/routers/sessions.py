@@ -14,16 +14,26 @@ from schemas import SessionCreate, SessionRead
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 
-def _build_session_read(session: SessionModel) -> SessionRead:
+def _build_session_read(session: SessionModel, db: DBSession) -> SessionRead:
+    """Build a SessionRead, collecting all active headsets that have the game installed."""
+    installations = (
+        db.query(GameInstallation)
+        .filter(GameInstallation.game_id == session.game_id)
+        .all()
+    )
+    headset_codes = [
+        inst.headset.code
+        for inst in installations
+        if not inst.is_expired and inst.headset.is_active
+    ]
     return SessionRead(
         id=session.id,
         session_code=session.session_code,
         game_id=session.game_id,
-        headset_id=session.headset_id,
         duration_minutes=session.duration_minutes,
         created_at=session.created_at,
         game_name=session.game.name,
-        headset_code=session.headset.code,
+        headset_codes=headset_codes,
     )
 
 
@@ -32,13 +42,14 @@ def create_session(payload: SessionCreate, db: DBSession = Depends(get_db)):
     """
     Create a new play session.
 
-    Validation rules enforced server-side:
+    Validation rules:
     - Game must exist and be ACTIVE.
-    - Headset must be active.
-    - A non-expired GameInstallation for (game, headset) must exist.
+    - At least one non-expired active installation must exist for the game.
     - Duration must be one of 10, 30, 45, or 60 minutes.
+    - Headset is NOT chosen by the player; the first available headset is used
+      for record-keeping purposes only.
     """
-    # Validate duration (also validated by Pydantic, belt-and-suspenders)
+    # Validate duration
     if payload.duration_minutes not in VALID_DURATIONS:
         raise HTTPException(
             status_code=422,
@@ -55,39 +66,36 @@ def create_session(payload: SessionCreate, db: DBSession = Depends(get_db)):
             detail=f"Game '{game.name}' is not active (status: {game.status})",
         )
 
-    # Validate headset via installation lookup
-    installation: GameInstallation | None = (
+    # Find all active, non-expired installations for this game
+    installations = (
         db.query(GameInstallation)
-        .filter(
-            GameInstallation.game_id == payload.game_id,
-            GameInstallation.headset_id == payload.headset_id,
-        )
-        .first()
+        .filter(GameInstallation.game_id == payload.game_id)
+        .all()
     )
-    if not installation:
+    available = [
+        inst for inst in installations
+        if not inst.is_expired and inst.headset.is_active
+    ]
+    if not available:
         raise HTTPException(
             status_code=400,
-            detail="This game is not installed on the selected headset",
+            detail="No active headset installations available for this game.",
         )
-    if installation.is_expired:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Installation expired on {installation.expiry_date}. Cannot start session.",
-        )
-    if not installation.headset.is_active:
-        raise HTTPException(status_code=400, detail="The selected headset is inactive")
+
+    # Use the first available headset for DB FK storage
+    first_headset_id = available[0].headset_id
 
     # Create session record
     new_session = SessionModel(
         session_code=SessionModel.generate_session_code(),
         game_id=payload.game_id,
-        headset_id=payload.headset_id,
+        headset_id=first_headset_id,
         duration_minutes=payload.duration_minutes,
     )
     db.add(new_session)
     db.commit()
     db.refresh(new_session)
-    return _build_session_read(new_session)
+    return _build_session_read(new_session, db)
 
 
 @router.get("/{session_id}", response_model=SessionRead)
@@ -96,4 +104,4 @@ def get_session(session_id: int, db: DBSession = Depends(get_db)):
     session = db.get(SessionModel, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    return _build_session_read(session)
+    return _build_session_read(session, db)

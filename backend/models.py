@@ -61,6 +61,10 @@ class Game(Base):
     )
     thumbnail_url: Mapped[str] = mapped_column(String(1024), nullable=False, default="")
     video_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    youtube_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    viewable_age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_multiplayer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    visit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[str] = mapped_column(
         SAEnum(GameStatus, name="game_status"),
         nullable=False,

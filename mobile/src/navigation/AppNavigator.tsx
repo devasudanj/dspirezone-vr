@@ -13,7 +13,6 @@ import type { RootStackParamList } from './types';
 
 import GameLibraryScreen from '../screens/GameLibraryScreen';
 import GameDetailScreen from '../screens/GameDetailScreen';
-import HeadsetSelectionScreen from '../screens/HeadsetSelectionScreen';
 import TimeSelectionScreen from '../screens/TimeSelectionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
 
@@ -42,11 +41,6 @@ export default function AppNavigator() {
           name="GameDetail"
           component={GameDetailScreen}
           options={{ title: 'Game Details' }}
-        />
-        <Stack.Screen
-          name="HeadsetSelection"
-          component={HeadsetSelectionScreen}
-          options={{ title: 'Select Headset' }}
         />
         <Stack.Screen
           name="TimeSelection"

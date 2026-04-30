@@ -20,6 +20,11 @@ export async function fetchGame(gameId: number): Promise<Game> {
   return data;
 }
 
+/** Increment the visit counter for a game (fire-and-forget). */
+export async function recordGameVisit(gameId: number): Promise<void> {
+  await client.post(`/games/${gameId}/visit`);
+}
+
 /**
  * Return all installations for a game.
  * Pass activeOnly=true to filter out expired installations

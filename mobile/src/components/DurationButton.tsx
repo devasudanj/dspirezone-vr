@@ -16,11 +16,11 @@ interface Props {
   onPress: () => void;
 }
 
-const DURATION_META: Record<SessionDuration, { label: string; sublabel: string; color: string }> = {
-  10: { label: '10', sublabel: 'minutes', color: Colors.duration10 },
-  30: { label: '30', sublabel: 'minutes', color: Colors.duration30 },
-  45: { label: '45', sublabel: 'minutes', color: Colors.duration45 },
-  60: { label: '1 hr', sublabel: 'max', color: Colors.duration60 },
+const DURATION_META: Record<SessionDuration, { label: string; sublabel: string; price: string; color: string }> = {
+  10: { label: '10', sublabel: 'minutes', price: '₹100', color: Colors.duration10 },
+  30: { label: '30', sublabel: 'minutes', price: '₹250', color: Colors.duration30 },
+  45: { label: '45', sublabel: 'minutes', price: '₹350', color: Colors.duration45 },
+  60: { label: '1 hr', sublabel: 'max',     price: '₹400', color: Colors.duration60 },
 };
 
 export default function DurationButton({ minutes, selected, onPress }: Props) {
@@ -46,6 +46,9 @@ export default function DurationButton({ minutes, selected, onPress }: Props) {
         </Text>
         <Text style={[styles.sublabel, selected && styles.sublabelSelected]}>
           {meta.sublabel}
+        </Text>
+        <Text style={[styles.price, selected && styles.priceSelected]}>
+          {meta.price}
         </Text>
         {selected && <View style={styles.selectedDot} />}
       </View>
@@ -82,6 +85,15 @@ const styles = StyleSheet.create({
   sublabelSelected: {
     color: Colors.background,
     opacity: 0.8,
+  },
+  price: {
+    color: Colors.textPrimary,
+    fontSize: Typography.base,
+    fontWeight: Typography.bold,
+    marginTop: 2,
+  },
+  priceSelected: {
+    color: Colors.background,
   },
   selectedDot: {
     position: 'absolute',

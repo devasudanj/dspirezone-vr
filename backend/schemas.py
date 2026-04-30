@@ -44,6 +44,9 @@ class GameBase(BaseModel):
     category: GameCategory
     thumbnail_url: str
     video_url: Optional[str] = None
+    youtube_url: Optional[str] = None
+    viewable_age: Optional[int] = None
+    is_multiplayer: bool = False
     status: GameStatus = GameStatus.ACTIVE
 
 
@@ -53,6 +56,7 @@ class GameCreate(GameBase):
 
 class GameRead(GameBase):
     id: int
+    visit_count: int
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -73,6 +77,13 @@ class GameListItem(BaseModel):
 # Installation schemas
 # ---------------------------------------------------------------------------
 
+class InstallationCreate(BaseModel):
+    game_id: int
+    headset_id: int
+    install_date: date
+    expiry_date: date
+
+
 class InstallationRead(BaseModel):
     id: int
     game_id: int
@@ -92,7 +103,6 @@ class InstallationRead(BaseModel):
 
 class SessionCreate(BaseModel):
     game_id: int
-    headset_id: int
     duration_minutes: int
 
     @field_validator("duration_minutes")
@@ -109,13 +119,12 @@ class SessionRead(BaseModel):
     id: int
     session_code: str
     game_id: int
-    headset_id: int
     duration_minutes: int
     created_at: datetime
 
-    # Denormalized for the printed slip (avoids extra round-trips)
+    # Denormalized for the printed slip
     game_name: str
-    headset_code: str
+    headset_codes: list[str]  # all active headsets on which the game is installed
 
     model_config = {"from_attributes": True}
 

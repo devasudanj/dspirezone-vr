@@ -1,14 +1,16 @@
 /**
  * src/screens/GameDetailScreen.tsx
  * ---------------------------------
- * Shows full info about a game: description, category badge, and the list of
- * headsets it's installed on with visual status indicators.
+ * Shows full info about a game: thumbnail, description, category badge, age
+ * rating, multiplayer flag, visit count, YouTube trailer link, and the list
+ * of headsets it's installed on with visual status indicators.
  *
  * CTA: "Start Session" → HeadsetSelectionScreen
  */
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,14 +18,25 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import YoutubeIframe from 'react-native-youtube-iframe';
 
-import { fetchGame, fetchGameInstallations } from '../api/games';
-import InstallationRow from '../components/InstallationRow';
+import { fetchGame, fetchGameInstallations, recordGameVisit } from '../api/games';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
 import type { Game, Installation } from '../types';
 import type { GameDetailProps } from '../navigation/types';
+
+/** Extract YouTube video ID from watch, short, or embed URLs. */
+function getVideoId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)?([\w-]{11})(?:[?&]|$)/,
+  );
+  return match ? match[1] : null;
+}
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function GameDetailScreen({ route, navigation }: GameDetailProps) {
   const { gameId } = route.params;
@@ -32,6 +45,7 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trailerExpanded, setTrailerExpanded] = useState(false);
 
   const setSelectedGame = useSessionStore((s) => s.setSelectedGame);
 
@@ -46,6 +60,8 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
         if (!cancelled) {
           setGame(g);
           setInstallations(insts);
+          // Fire-and-forget visit counter increment
+          recordGameVisit(gameId).catch(() => {});
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message ?? 'Failed to load game');
@@ -64,8 +80,9 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
   const handleStartSession = () => {
     if (!game) return;
     setSelectedGame(game);
-    navigation.navigate('HeadsetSelection', { gameId: game.id });
+    navigation.navigate('TimeSelection', { gameId: game.id });
   };
+
 
   if (loading) {
     return (
@@ -86,7 +103,7 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Hero image */}
+        {/* Hero thumbnail */}
         <Image
           source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/800x300' }}
           style={styles.hero}
@@ -95,13 +112,114 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
 
         {/* Meta info */}
         <View style={styles.meta}>
+          {/* Title + category */}
           <View style={styles.titleRow}>
             <Text style={styles.title}>{game.name}</Text>
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{game.category}</Text>
             </View>
           </View>
-          <Text style={styles.description}>{game.description}</Text>
+
+          {/* Badges row: age, multiplayer, visits */}
+          <View style={styles.badgeRow}>
+            {game.viewable_age != null && (
+              <View style={styles.ageBadge}>
+                <Ionicons name="person" size={13} color={Colors.textOnPrimary} />
+                <Text style={styles.ageBadgeText}>{game.viewable_age}+</Text>
+              </View>
+            )}
+            <View style={[styles.infoBadge, game.is_multiplayer ? styles.multiplayerOn : styles.multiplayerOff]}>
+              <Ionicons
+                name={game.is_multiplayer ? 'people' : 'person-circle-outline'}
+                size={13}
+                color={game.is_multiplayer ? Colors.accent : Colors.textMuted}
+              />
+              <Text style={[styles.infoBadgeText, { color: game.is_multiplayer ? Colors.accent : Colors.textMuted }]}>
+                {game.is_multiplayer ? 'Multiplayer' : 'Single Player'}
+              </Text>
+            </View>
+            <View style={styles.visitsBadge}>
+              <Ionicons name="eye-outline" size={13} color={Colors.textSecondary} />
+              <Text style={styles.visitsText}>{game.visit_count.toLocaleString()} views</Text>
+            </View>
+          </View>
+
+          {/* Description */}
+          <Text style={styles.description} numberOfLines={3} ellipsizeMode="tail">
+            {game.description}
+          </Text>
+
+          {/* Collapsible YouTube trailer */}
+          {game.youtube_url && getVideoId(game.youtube_url) ? (
+            <View style={styles.trailerContainer}>
+              <TouchableOpacity
+                style={styles.trailerHeader}
+                onPress={() => setTrailerExpanded((e) => !e)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="logo-youtube" size={16} color="#FF0000" />
+                <Text style={styles.trailerLabel}>Watch Trailer</Text>
+                <Ionicons
+                  name={trailerExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={14}
+                  color={Colors.textMuted}
+                  style={{ marginLeft: 'auto' }}
+                />
+              </TouchableOpacity>
+              {trailerExpanded && (
+                <YoutubeIframe
+                  videoId={getVideoId(game.youtube_url)!}
+                  height={(SCREEN_WIDTH - 40) * (9 / 16)}
+                  width={SCREEN_WIDTH - 40}
+                  play={false}
+                  allowWebViewZoom={false}
+                  initialPlayerParams={{ modestbranding: 1, rel: 0, preventFullScreen: false }}
+                  webViewProps={{
+                    injectedJavaScript: `
+                      (function() {
+                        var style = document.createElement('style');
+                        style.textContent = [
+                          '.ytp-youtube-button { display: none !important; }',
+                          '.ytp-watermark { display: none !important; }',
+                          '.ytp-chrome-top { display: none !important; }',
+                          '.ytp-chrome-top-buttons { display: none !important; }',
+                          '.ytp-share-button { display: none !important; }',
+                          '.ytp-overflow-button { display: none !important; }',
+                          'a[href*="youtube.com"] { pointer-events: none !important; cursor: default !important; }',
+                          'a[href*="youtu.be"] { pointer-events: none !important; cursor: default !important; }',
+                        ].join('');
+                        document.head.appendChild(style);
+
+                        document.addEventListener('click', function(e) {
+                          var el = e.target;
+                          while (el) {
+                            if (el.tagName === 'A' && el.href &&
+                                (el.href.indexOf('youtube.com') !== -1 || el.href.indexOf('youtu.be') !== -1)) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              return false;
+                            }
+                            el = el.parentElement;
+                          }
+                        }, true);
+                      })();
+                      true;
+                    `,
+                    mediaPlaybackRequiresUserAction: false,
+                    onShouldStartLoadWithRequest: (request: { url: string }) => {
+                      const url = request.url || '';
+                      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                        if (!url.includes('youtube.com/embed') && !url.includes('youtube-nocookie.com')) {
+                          return false;
+                        }
+                      }
+                      return true;
+                    },
+                  }}
+                />
+              )}
+            </View>
+          ) : null}
         </View>
 
         {/* Installations */}
@@ -114,9 +232,22 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
               This game has no headset installations yet.
             </Text>
           ) : (
-            installations.map((inst) => (
-              <InstallationRow key={inst.id} installation={inst} />
-            ))
+            <View style={styles.headsetChipsRow}>
+              {installations.map((inst) => {
+                const dotColor =
+                  inst.installation_status === 'ACTIVE'
+                    ? Colors.success
+                    : inst.installation_status === 'EXPIRING_SOON'
+                    ? Colors.warning
+                    : Colors.danger;
+                return (
+                  <View key={inst.id} style={[styles.headsetChip, { borderColor: dotColor }]}>
+                    <View style={[styles.headsetDot, { backgroundColor: dotColor }]} />
+                    <Text style={styles.headsetChipText}>{inst.headset_code}</Text>
+                  </View>
+                );
+              })}
+            </View>
           )}
         </View>
       </ScrollView>
@@ -151,12 +282,12 @@ const styles = StyleSheet.create({
 
   hero: {
     width: '100%',
-    height: 220,
+    height: 160,
     backgroundColor: Colors.surface,
   },
 
   meta: {
-    padding: 20,
+    padding: 16,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -165,7 +296,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     flexWrap: 'wrap',
   },
   title: {
@@ -185,10 +316,91 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
     fontWeight: Typography.semibold,
   },
+
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+    marginBottom: 14,
+  },
+  ageBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.danger,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  ageBadgeText: {
+    color: Colors.textOnPrimary,
+    fontSize: Typography.sm,
+    fontWeight: Typography.bold,
+  },
+  infoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  multiplayerOn: {
+    borderColor: Colors.accent,
+    backgroundColor: 'rgba(0,212,255,0.08)',
+  },
+  multiplayerOff: {
+    borderColor: Colors.disabled,
+    backgroundColor: 'transparent',
+  },
+  infoBadgeText: {
+    fontSize: Typography.sm,
+    fontWeight: Typography.medium,
+  },
+  visitsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  visitsText: {
+    color: Colors.textSecondary,
+    fontSize: Typography.sm,
+  },
+
   description: {
     color: Colors.textSecondary,
     fontSize: Typography.base,
     lineHeight: 22,
+    marginBottom: 10,
+  },
+
+  trailerContainer: {
+    marginTop: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceAlt,
+  },
+  trailerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  trailerLabel: {
+    color: Colors.textPrimary,
+    fontSize: Typography.sm,
+    fontWeight: Typography.semibold,
+  },
+  trailerPlayer: {
+    width: '100%',
+    height: (SCREEN_WIDTH - 40) * (9 / 16), // 16:9 aspect ratio, accounting for padding
+    backgroundColor: '#000',
   },
 
   section: {
@@ -203,6 +415,33 @@ const styles = StyleSheet.create({
   noInstalls: {
     color: Colors.textMuted,
     fontSize: Typography.base,
+  },
+
+  headsetChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  headsetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    backgroundColor: Colors.surfaceAlt,
+  },
+  headsetDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  headsetChipText: {
+    color: Colors.textPrimary,
+    fontSize: Typography.sm,
+    fontWeight: Typography.semibold,
+    letterSpacing: 0.8,
   },
 
   footer: {
