@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import inspect as sa_inspect, text
 from database import engine, Base, settings
-from routers import games, headsets, sessions, admin
+from routers import games, headsets, sessions, admin, feedback
 
 
 # ---------------------------------------------------------------------------
@@ -69,6 +69,7 @@ app.include_router(games.router)
 app.include_router(headsets.router)
 app.include_router(sessions.router)
 app.include_router(admin.router)
+app.include_router(feedback.router)
 
 
 @app.get("/", tags=["Health"])

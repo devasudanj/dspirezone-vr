@@ -154,3 +154,12 @@ class Session(Base):
         today = datetime.utcnow().strftime("%Y%m%d")
         suffix = uuid.uuid4().hex[:4].upper()
         return f"DZ-{today}-{suffix}"
+
+
+class Feedback(Base):
+    """User-submitted game / app requests."""
+    __tablename__ = "feedback"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    game_title: Mapped[str] = mapped_column(String(500), nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

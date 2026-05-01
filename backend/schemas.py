@@ -136,3 +136,19 @@ class SessionRead(BaseModel):
 class MediaUploadResponse(BaseModel):
     blob_url: str
     message: str
+
+
+# ---------------------------------------------------------------------------
+# Feedback schemas
+# ---------------------------------------------------------------------------
+
+class FeedbackCreate(BaseModel):
+    game_title: str
+
+
+class FeedbackRead(BaseModel):
+    id: int
+    game_title: str
+    submitted_at: datetime
+
+    model_config = {"from_attributes": True}

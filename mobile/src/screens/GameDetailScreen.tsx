@@ -37,6 +37,7 @@ function getVideoId(url: string): string | null {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const HERO_VIDEO_HEIGHT = Math.min(Math.round(SCREEN_WIDTH * 9 / 16), 280);
 
 export default function GameDetailScreen({ route, navigation }: GameDetailProps) {
   const { gameId } = route.params;
@@ -45,7 +46,6 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [trailerExpanded, setTrailerExpanded] = useState(false);
 
   const setSelectedGame = useSessionStore((s) => s.setSelectedGame);
 
@@ -103,12 +103,66 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Hero thumbnail */}
-        <Image
-          source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/800x300' }}
-          style={styles.hero}
-          contentFit="cover"
-        />
+        {/* Hero: YouTube player if available, otherwise thumbnail */}
+        {game.youtube_url && getVideoId(game.youtube_url) ? (
+          <View style={styles.heroVideo}>
+            <YoutubeIframe
+              videoId={getVideoId(game.youtube_url)!}
+              height={HERO_VIDEO_HEIGHT}
+              width={SCREEN_WIDTH}
+              play={false}
+              allowWebViewZoom={false}
+              initialPlayerParams={{ modestbranding: 1, rel: 0, preventFullScreen: false }}
+              webViewProps={{
+                injectedJavaScript: `
+                  (function() {
+                    var style = document.createElement('style');
+                    style.textContent = [
+                      '.ytp-youtube-button { display: none !important; }',
+                      '.ytp-watermark { display: none !important; }',
+                      '.ytp-chrome-top { display: none !important; }',
+                      '.ytp-chrome-top-buttons { display: none !important; }',
+                      '.ytp-share-button { display: none !important; }',
+                      '.ytp-overflow-button { display: none !important; }',
+                      'a[href*="youtube.com"] { pointer-events: none !important; cursor: default !important; }',
+                      'a[href*="youtu.be"] { pointer-events: none !important; cursor: default !important; }',
+                    ].join('');
+                    document.head.appendChild(style);
+                    document.addEventListener('click', function(e) {
+                      var el = e.target;
+                      while (el) {
+                        if (el.tagName === 'A' && el.href &&
+                            (el.href.indexOf('youtube.com') !== -1 || el.href.indexOf('youtu.be') !== -1)) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return false;
+                        }
+                        el = el.parentElement;
+                      }
+                    }, true);
+                  })();
+                  true;
+                `,
+                mediaPlaybackRequiresUserAction: false,
+                onShouldStartLoadWithRequest: (request: { url: string }) => {
+                  const url = request.url || '';
+                  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    if (!url.includes('youtube.com/embed') && !url.includes('youtube-nocookie.com')) {
+                      return false;
+                    }
+                  }
+                  return true;
+                },
+              }}
+            />
+          </View>
+        ) : (
+          <Image
+            source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/800x300' }}
+            style={styles.hero}
+            contentFit="cover"
+          />
+        )}
 
         {/* Meta info */}
         <View style={styles.meta}>
@@ -148,78 +202,6 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
           <Text style={styles.description} numberOfLines={3} ellipsizeMode="tail">
             {game.description}
           </Text>
-
-          {/* Collapsible YouTube trailer */}
-          {game.youtube_url && getVideoId(game.youtube_url) ? (
-            <View style={styles.trailerContainer}>
-              <TouchableOpacity
-                style={styles.trailerHeader}
-                onPress={() => setTrailerExpanded((e) => !e)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="logo-youtube" size={16} color="#FF0000" />
-                <Text style={styles.trailerLabel}>Watch Trailer</Text>
-                <Ionicons
-                  name={trailerExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={14}
-                  color={Colors.textMuted}
-                  style={{ marginLeft: 'auto' }}
-                />
-              </TouchableOpacity>
-              {trailerExpanded && (
-                <YoutubeIframe
-                  videoId={getVideoId(game.youtube_url)!}
-                  height={(SCREEN_WIDTH - 40) * (9 / 16)}
-                  width={SCREEN_WIDTH - 40}
-                  play={false}
-                  allowWebViewZoom={false}
-                  initialPlayerParams={{ modestbranding: 1, rel: 0, preventFullScreen: false }}
-                  webViewProps={{
-                    injectedJavaScript: `
-                      (function() {
-                        var style = document.createElement('style');
-                        style.textContent = [
-                          '.ytp-youtube-button { display: none !important; }',
-                          '.ytp-watermark { display: none !important; }',
-                          '.ytp-chrome-top { display: none !important; }',
-                          '.ytp-chrome-top-buttons { display: none !important; }',
-                          '.ytp-share-button { display: none !important; }',
-                          '.ytp-overflow-button { display: none !important; }',
-                          'a[href*="youtube.com"] { pointer-events: none !important; cursor: default !important; }',
-                          'a[href*="youtu.be"] { pointer-events: none !important; cursor: default !important; }',
-                        ].join('');
-                        document.head.appendChild(style);
-
-                        document.addEventListener('click', function(e) {
-                          var el = e.target;
-                          while (el) {
-                            if (el.tagName === 'A' && el.href &&
-                                (el.href.indexOf('youtube.com') !== -1 || el.href.indexOf('youtu.be') !== -1)) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              return false;
-                            }
-                            el = el.parentElement;
-                          }
-                        }, true);
-                      })();
-                      true;
-                    `,
-                    mediaPlaybackRequiresUserAction: false,
-                    onShouldStartLoadWithRequest: (request: { url: string }) => {
-                      const url = request.url || '';
-                      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                        if (!url.includes('youtube.com/embed') && !url.includes('youtube-nocookie.com')) {
-                          return false;
-                        }
-                      }
-                      return true;
-                    },
-                  }}
-                />
-              )}
-            </View>
-          ) : null}
         </View>
 
         {/* Installations */}
@@ -284,6 +266,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 160,
     backgroundColor: Colors.surface,
+  },
+  heroVideo: {
+    width: SCREEN_WIDTH,
+    height: HERO_VIDEO_HEIGHT,
+    backgroundColor: '#000',
   },
 
   meta: {
