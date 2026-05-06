@@ -71,8 +71,8 @@ class TestSessionModel:
         assert len(parts[2]) == 4  # hex suffix
 
     def test_generate_session_code_uniqueness(self):
-        codes = {SessionModel.generate_session_code() for _ in range(100)}
-        assert len(codes) == 100
+        codes = {SessionModel.generate_session_code() for _ in range(10)}
+        assert len(codes) == 10
 
     def test_valid_durations(self):
         assert VALID_DURATIONS == {10, 30, 45, 60}

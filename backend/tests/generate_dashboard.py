@@ -29,7 +29,7 @@ def _status_badge(status: str) -> str:
 
 def _duration_fmt(seconds: float) -> str:
     if seconds < 0.001:
-        return "<1ms"
+        return "&lt;1ms"
     if seconds < 1:
         return f"{seconds * 1000:.0f}ms"
     return f"{seconds:.2f}s"
