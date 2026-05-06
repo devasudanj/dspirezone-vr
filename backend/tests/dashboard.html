@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dspire VR Zone – Test Dashboard</title>
+<style>
+:root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #818cf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --orange: #f97316;
+    --border: #475569;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+}
+.dashboard { max-width: 1200px; margin: 0 auto; }
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.header h1 {
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+}
+.header .subtitle {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.summary-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+.summary-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+.summary-card .label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.summary-card.passed .value { color: var(--green); }
+.summary-card.failed .value { color: var(--red); }
+.summary-card.skipped .value { color: var(--yellow); }
+.summary-card.rate .value { color: var(--accent); }
+.summary-card.time .value { color: var(--text); font-size: 1.5rem; }
+.chart-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+.module-card {
+    background: var(--surface);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.module-header:hover { background: var(--surface2); }
+.module-title { display: flex; align-items: center; gap: 0.75rem; }
+.module-name { font-weight: 600; font-size: 1rem; }
+.module-stats { display: flex; gap: 1rem; align-items: center; font-size: 0.85rem; }
+.stat-passed { color: var(--green); }
+.stat-failed { color: var(--red); }
+.stat-skipped { color: var(--yellow); }
+.stat-duration { color: var(--text-dim); }
+.chevron {
+    transition: transform 0.2s;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+}
+.module-card.collapsed .chevron { transform: rotate(-90deg); }
+.module-card.collapsed .test-table { display: none; }
+.test-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.test-row td {
+    padding: 0.6rem 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+.test-name { display: flex; flex-direction: column; }
+.test-class { color: var(--text-dim); font-size: 0.75rem; }
+.test-status { text-align: center; width: 100px; }
+.test-duration { text-align: right; width: 80px; color: var(--text-dim); }
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+}
+.failure-details {
+    background: #1a1a2e;
+    color: #fca5a5;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-radius: 6px;
+    margin: 0.5rem 1rem;
+}
+.failure-row td {
+    padding: 0 !important;
+    border: none !important;
+}
+.footer {
+    text-align: center;
+    padding-top: 2rem;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <h1>Dspire VR Zone &mdash; Test Dashboard</h1>
+        <div class="subtitle">Generated 2026-05-06 00:29:57 UTC &bull; pytest </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="value">68</div>
+            <div class="label">Total Tests</div>
+        </div>
+        <div class="summary-card passed">
+            <div class="value">68</div>
+            <div class="label">Passed</div>
+        </div>
+        <div class="summary-card failed">
+            <div class="value">0</div>
+            <div class="label">Failed</div>
+        </div>
+        <div class="summary-card skipped">
+            <div class="value">0</div>
+            <div class="label">Skipped</div>
+        </div>
+        <div class="summary-card rate">
+            <div class="value">100.0%</div>
+            <div class="label">Pass Rate</div>
+        </div>
+        <div class="summary-card time">
+            <div class="value"><1ms</div>
+            <div class="label">Duration</div>
+        </div>
+    </div>
+
+    <div class="chart-section">
+        
+    <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#334155" stroke-width="24" />
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#22c55e" stroke-width="24" stroke-dasharray="502.65 0.00" stroke-dashoffset="0.00" transform="rotate(-90 100 100)" />
+        <text x="100" y="92" text-anchor="middle" fill="#e2e8f0" font-size="28" font-weight="700">68/68</text>
+        <text x="100" y="114" text-anchor="middle" fill="#94a3b8" font-size="12">tests passed</text>
+    </svg>
+    </div>
+
+    <h2 style="margin-bottom:1rem; color: var(--text-dim); font-size: 1.1rem;">Test Modules</h2>
+    
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_admin.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">16 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateGame</span>
+                    <span>test_create_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateGame</span>
+                    <span>test_create_game_with_optional_fields</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateGame</span>
+                    <span>test_create_game_missing_required_fields</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateGame</span>
+                    <span>test_create_game_invalid_category</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminUpdateGame</span>
+                    <span>test_update_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminUpdateGame</span>
+                    <span>test_update_nonexistent_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateHeadset</span>
+                    <span>test_create_headset</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateHeadset</span>
+                    <span>test_create_headset_default_model</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateHeadset</span>
+                    <span>test_create_duplicate_headset</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateInstallation</span>
+                    <span>test_create_installation</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateInstallation</span>
+                    <span>test_create_installation_nonexistent_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminCreateInstallation</span>
+                    <span>test_create_installation_nonexistent_headset</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminMediaUpload</span>
+                    <span>test_upload_thumbnail_invalid_type</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminMediaUpload</span>
+                    <span>test_upload_video_invalid_type</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminMediaUpload</span>
+                    <span>test_upload_thumbnail_nonexistent_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestAdminMediaUpload</span>
+                    <span>test_upload_video_nonexistent_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_feedback.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">6 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestSubmitFeedback</span>
+                    <span>test_submit_feedback</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestSubmitFeedback</span>
+                    <span>test_submit_feedback_strips_whitespace</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestSubmitFeedback</span>
+                    <span>test_submit_feedback_missing_title</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListFeedback</span>
+                    <span>test_list_feedback_empty</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListFeedback</span>
+                    <span>test_list_feedback_with_data</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListFeedback</span>
+                    <span>test_list_feedback_order</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_games.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">17 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_empty</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_returns_active_by_default</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_filter_by_category</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_filter_disabled</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_invalid_status_rejected</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_sorted_by_name</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListGames</span>
+                    <span>test_list_games_response_shape</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetGame</span>
+                    <span>test_get_existing_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetGame</span>
+                    <span>test_get_nonexistent_game_returns_404</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestRecordVisit</span>
+                    <span>test_visit_increments_counter</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestRecordVisit</span>
+                    <span>test_visit_increments_multiple_times</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestRecordVisit</span>
+                    <span>test_visit_nonexistent_game_returns_404</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallations</span>
+                    <span>test_list_installations</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallations</span>
+                    <span>test_installations_have_status</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallations</span>
+                    <span>test_active_only_filter</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallations</span>
+                    <span>test_installations_response_shape</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallations</span>
+                    <span>test_installations_nonexistent_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_headsets.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">5 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListHeadsets</span>
+                    <span>test_list_headsets_empty</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListHeadsets</span>
+                    <span>test_list_headsets_with_data</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestListHeadsets</span>
+                    <span>test_headset_response_shape</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetHeadset</span>
+                    <span>test_get_existing_headset</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetHeadset</span>
+                    <span>test_get_nonexistent_headset_returns_404</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_health.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">3 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestHealthCheck</span>
+                    <span>test_root_returns_ok</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestHealthCheck</span>
+                    <span>test_docs_endpoint_available</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestHealthCheck</span>
+                    <span>test_redoc_endpoint_available</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_models.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">9 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameModel</span>
+                    <span>test_game_creation</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameModel</span>
+                    <span>test_game_default_values</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestHeadsetModel</span>
+                    <span>test_headset_creation</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallationModel</span>
+                    <span>test_active_installation</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallationModel</span>
+                    <span>test_expiring_soon_installation</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGameInstallationModel</span>
+                    <span>test_expired_installation</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestSessionModel</span>
+                    <span>test_generate_session_code_format</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestSessionModel</span>
+                    <span>test_generate_session_code_uniqueness</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestSessionModel</span>
+                    <span>test_valid_durations</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <div class="module-card">
+            <div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <div class="module-title">
+                    <span class="badge" style="background:#22c55e">PASSED</span>
+                    <span class="module-name">tests/test_sessions.py</span>
+                </div>
+                <div class="module-stats">
+                    <span class="stat-passed">12 passed</span>
+                    
+                    
+                    <span class="stat-duration"><1ms</span>
+                    <span class="chevron">&#9660;</span>
+                </div>
+            </div>
+            <table class="test-table">
+                <tbody>
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_success</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_all_valid_durations</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_invalid_duration</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_nonexistent_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_disabled_game</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_no_installations</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_unique_codes</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_missing_fields</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestCreateSession</span>
+                    <span>test_create_session_negative_duration</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetSession</span>
+                    <span>test_get_session</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetSession</span>
+                    <span>test_get_nonexistent_session</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            
+            <tr class="test-row passed">
+                <td class="test-name">
+                    <span class="test-class">TestGetSession</span>
+                    <span>test_session_response_shape</span>
+                </td>
+                <td class="test-status"><span class="badge" style="background:#22c55e">PASSED</span></td>
+                <td class="test-duration"><1ms</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+
+    <div class="footer">
+        Dspire VR Zone Automation Test Suite &bull; Powered by pytest
+    </div>
+</div>
+<script>
+// Start all modules expanded
+</script>
+</body>
+</html>
