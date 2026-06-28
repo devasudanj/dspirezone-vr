@@ -3,6 +3,12 @@
  * --------------------------------
  * Root navigator for Dspire VR Zone.
  * Bottom tab at root: Games (stack) | Suggest a Game (feedback form).
+ *
+ * Games stack flow:
+ *   GameTypeSelection
+ *     ├── VR path:  GameLibrary → GameDetail → TimeSelection → SessionSummary
+ *     └── Nex path: NexPlaygroundLibrary → NexPlaygroundDetail
+ *                   → NexPlaygroundTimeSelection → NexPlaygroundSessionSummary
  */
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
@@ -13,11 +19,21 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../theme/colors';
 import type { GamesStackParamList, RootTabParamList } from './types';
 
+// Shared screens
+import GameTypeSelectionScreen from '../screens/GameTypeSelectionScreen';
+import FeedbackScreen from '../screens/FeedbackScreen';
+
+// VR flow screens
 import GameLibraryScreen from '../screens/GameLibraryScreen';
 import GameDetailScreen from '../screens/GameDetailScreen';
 import TimeSelectionScreen from '../screens/TimeSelectionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
-import FeedbackScreen from '../screens/FeedbackScreen';
+
+// Nex Playground flow screens
+import NexPlaygroundLibraryScreen from '../screens/NexPlaygroundLibraryScreen';
+import NexPlaygroundDetailScreen from '../screens/NexPlaygroundDetailScreen';
+import NexPlaygroundTimeSelectionScreen from '../screens/NexPlaygroundTimeSelectionScreen';
+import NexPlaygroundSessionSummaryScreen from '../screens/NexPlaygroundSessionSummaryScreen';
 
 const GamesStack = createNativeStackNavigator<GamesStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -34,10 +50,18 @@ const stackScreenOptions = {
 function GamesNavigator() {
   return (
     <GamesStack.Navigator screenOptions={stackScreenOptions}>
+      {/* ── Top-level selection ─────────────────────────────────────────── */}
+      <GamesStack.Screen
+        name="GameTypeSelection"
+        component={GameTypeSelectionScreen}
+        options={{ title: '🎮 Dspire VR Zone' }}
+      />
+
+      {/* ── VR flow ─────────────────────────────────────────────────────── */}
       <GamesStack.Screen
         name="GameLibrary"
         component={GameLibraryScreen}
-        options={{ title: '🎮 Dspire VR Zone' }}
+        options={{ title: '🥽 VR Games' }}
       />
       <GamesStack.Screen
         name="GameDetail"
@@ -52,6 +76,28 @@ function GamesNavigator() {
       <GamesStack.Screen
         name="SessionSummary"
         component={SessionSummaryScreen}
+        options={{ title: 'Session Confirmed', headerBackVisible: false }}
+      />
+
+      {/* ── Nex Playground flow ─────────────────────────────────────────── */}
+      <GamesStack.Screen
+        name="NexPlaygroundLibrary"
+        component={NexPlaygroundLibraryScreen}
+        options={{ title: '🕹️ Nex Playground' }}
+      />
+      <GamesStack.Screen
+        name="NexPlaygroundDetail"
+        component={NexPlaygroundDetailScreen}
+        options={{ title: 'Game Details' }}
+      />
+      <GamesStack.Screen
+        name="NexPlaygroundTimeSelection"
+        component={NexPlaygroundTimeSelectionScreen}
+        options={{ title: 'Select Duration' }}
+      />
+      <GamesStack.Screen
+        name="NexPlaygroundSessionSummary"
+        component={NexPlaygroundSessionSummaryScreen}
         options={{ title: 'Session Confirmed', headerBackVisible: false }}
       />
     </GamesStack.Navigator>

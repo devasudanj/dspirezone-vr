@@ -5,6 +5,9 @@
  * Keep these in sync with backend/schemas.py.
  */
 
+/** Distinguishes which gaming platform a flow belongs to. */
+export type GamePlatform = 'VR' | 'NEX_PLAYGROUND';
+
 export type GameStatus = 'ACTIVE' | 'EXPIRED' | 'DISABLED';
 
 export type GameCategory =
@@ -100,3 +103,66 @@ export interface SessionCreatePayload {
 /** Available session durations in minutes. */
 export const SESSION_DURATIONS = [10, 30, 45, 60] as const;
 export type SessionDuration = (typeof SESSION_DURATIONS)[number];
+
+// ---------------------------------------------------------------------------
+// Nex Playground
+// ---------------------------------------------------------------------------
+// TODO(backend): Replace mock types with real Pydantic-aligned interfaces once
+// the /nex-games/ endpoint is available in backend/routers/nex_games.py.
+
+export type NexGameCategory =
+  | 'Action'
+  | 'Sports'
+  | 'Dance'
+  | 'Adventure'
+  | 'Kids'
+  | 'Multiplayer'
+  | 'Other';
+
+/** Lightweight item returned by the Nex games list endpoint. */
+export interface NexGameListItem {
+  id: string;          // client-side UUID until backend assigns numeric IDs
+  name: string;
+  category: NexGameCategory;
+  thumbnail_url: string;
+  status: GameStatus;
+}
+
+/** Full Nex Playground game detail. */
+export interface NexGame {
+  id: string;
+  name: string;
+  description: string;
+  category: NexGameCategory;
+  thumbnail_url: string;
+  trailer_url: string | null;
+  min_players: number;
+  max_players: number;
+  min_age: number | null;
+  status: GameStatus;
+}
+
+/** A physical Nex Playground station in the venue. */
+export interface NexStation {
+  id: string;
+  code: string;       // e.g. "NEX-01"
+  is_active: boolean;
+}
+
+/** A confirmed Nex Playground session returned after booking. */
+export interface NexSession {
+  id: string;
+  session_code: string;
+  game_id: string;
+  game_name: string;
+  duration_minutes: number;
+  players: number;
+  station_codes: string[];
+  created_at: string;
+}
+
+export interface NexSessionCreatePayload {
+  game_id: string;
+  duration_minutes: SessionDuration;
+  players: number;
+}

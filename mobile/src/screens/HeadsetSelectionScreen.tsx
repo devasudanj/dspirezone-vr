@@ -57,7 +57,7 @@ export default function HeadsetSelectionScreen({ route, navigation }: HeadsetSel
 
   const handleSelect = (inst: Installation) => {
     setSelectedInstallation(inst);
-    navigation.navigate('TimeSelection', { gameId, installation: inst });
+    navigation.navigate('TimeSelection', { gameId });
   };
 
   if (loading) {

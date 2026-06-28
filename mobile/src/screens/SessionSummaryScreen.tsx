@@ -79,7 +79,7 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
 
   const handleNewSession = () => {
     resetFlow();
-    navigation.navigate('GameLibrary');
+    navigation.navigate('GameTypeSelection');
   };
 
   if (loading) {
