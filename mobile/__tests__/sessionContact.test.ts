@@ -1,5 +1,6 @@
 import { buildSessionContactPayload } from '../src/utils/sessionContact';
 import { buildSessionSlipHtml } from '../src/utils/sessionSlip';
+import { DEFAULT_DISCOUNT_CODE, getDiscountForCode } from '../src/utils/pricing';
 
 describe('buildSessionContactPayload', () => {
   it('creates the required payload fields from a player and selected game', () => {
@@ -59,5 +60,39 @@ describe('buildSessionSlipHtml', () => {
     expect(html).toContain('Phone');
     expect(html).toContain('GST');
     expect(html).toContain('18%');
+  });
+});
+
+describe('discount validation', () => {
+  it('accepts the default promotional code when it is active and current', () => {
+    const activeCodes = [
+      {
+        code: 'DZVR-INTRO',
+        description: 'Intro Offer',
+        discount_pct: 15,
+        valid_from: '2026-01-01',
+        valid_until: '2026-12-31',
+      },
+    ];
+
+    const result = getDiscountForCode(activeCodes, 'DZVR-INTRO', new Date('2026-08-11T12:00:00Z'));
+
+    expect(result).not.toBeNull();
+    expect(result?.discount_pct).toBe(15);
+    expect(DEFAULT_DISCOUNT_CODE).toBe('DZVR-INTRO');
+  });
+
+  it('rejects expired discount codes', () => {
+    const activeCodes = [
+      {
+        code: 'DZVR-INTRO',
+        description: 'Intro Offer',
+        discount_pct: 15,
+        valid_from: '2026-01-01',
+        valid_until: '2026-08-10',
+      },
+    ];
+
+    expect(getDiscountForCode(activeCodes, 'DZVR-INTRO', new Date('2026-08-11T12:00:00Z'))).toBeNull();
   });
 });

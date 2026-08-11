@@ -4,7 +4,7 @@
  * Collects the player's name and phone number before a Nex Playground session.
  * This data is posted to the same live session-contact endpoint used by VR.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,23 +24,87 @@ import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useNexSessionStore } from '../store/nexSessionStore';
 import { buildSessionContactPayload } from '../utils/sessionContact';
+import { DEFAULT_DISCOUNT_CODE, getDiscountForCode, type ActiveDiscountCode } from '../utils/pricing';
 import type { NexSessionContactProps } from '../navigation/types';
 
 const SESSION_CONTACT_URL = 'https://dspirezone-app-dev.azurewebsites.net/api/vr/session-contacts';
+const DISCOUNT_CODES_URL = 'https://dspirezone-app-dev.azurewebsites.net/api/discounts/active';
 
 export default function NexSessionContactScreen({ navigation, route }: NexSessionContactProps) {
   const { gameId } = route.params;
   const selectedGame = useNexSessionStore((s) => s.selectedGame);
   const setPlayerContact = useNexSessionStore((s) => s.setPlayerContact);
+  const storeSetDiscountCode = useNexSessionStore((s) => s.setDiscountCode);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [discountCodeInput, setDiscountCodeInput] = useState(DEFAULT_DISCOUNT_CODE);
+  const [discounts, setDiscounts] = useState<ActiveDiscountCode[]>([]);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [loadingDiscounts, setLoadingDiscounts] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadDiscounts = async () => {
+      try {
+        setLoadingDiscounts(true);
+        const { data } = await axios.get<ActiveDiscountCode[]>(DISCOUNT_CODES_URL, {
+          timeout: 8000,
+        });
+        if (!isMounted) return;
+        setDiscounts(Array.isArray(data) ? data : []);
+        const defaultCode = getDiscountForCode(data ?? [], DEFAULT_DISCOUNT_CODE, new Date());
+        if (!defaultCode) {
+          setDiscountError('Enter a valid code.');
+        } else {
+          setDiscountError(null);
+        }
+      } catch (error: any) {
+        if (!isMounted) return;
+        setDiscountError('Unable to load active discounts right now.');
+      } finally {
+        if (isMounted) setLoadingDiscounts(false);
+      }
+    };
+
+    loadDiscounts();
+    return () => { isMounted = false; };
+  }, []);
 
   const canSubmit = name.trim().length > 1 && phone.replace(/\D/g, '').length >= 10;
 
+  const validateDiscountCode = (value: string) => {
+    const normalized = value.trim();
+    if (!normalized) {
+      setDiscountError('Enter a valid code.');
+      return false;
+    }
+
+    const match = getDiscountForCode(discounts, normalized, new Date());
+    if (!match) {
+      setDiscountError('Enter a valid code.');
+      return false;
+    }
+
+    setDiscountError(null);
+    return true;
+  };
+
   const handleContinue = async () => {
     if (!selectedGame || !canSubmit) return;
+
+    const isValidDiscount = validateDiscountCode(discountCodeInput);
+    if (!isValidDiscount) {
+      Alert.alert('Invalid discount code', 'Enter a valid code.');
+      return;
+    }
+
+    const activeDiscount = getDiscountForCode(discounts, discountCodeInput, new Date());
+    if (!activeDiscount) {
+      Alert.alert('Invalid discount code', 'Enter a valid code.');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -59,6 +123,7 @@ export default function NexSessionContactScreen({ navigation, route }: NexSessio
       });
 
       setPlayerContact({ name: payload.name, phone: payload.phone_number });
+      storeSetDiscountCode(activeDiscount.code, Number(activeDiscount.discount_pct ?? 0));
       navigation.navigate('NexPlaygroundTimeSelection', { gameId });
     } catch (error: any) {
       const message = error?.response?.data?.detail ?? error?.message ?? 'Unable to save your details right now.';
@@ -107,6 +172,33 @@ export default function NexSessionContactScreen({ navigation, route }: NexSessio
             style={styles.input}
             maxLength={15}
           />
+
+          <Text style={styles.label}>Discount code</Text>
+          <TextInput
+            value={discountCodeInput}
+            onChangeText={(text) => {
+              const upperText = text.toUpperCase();
+              setDiscountCodeInput(upperText);
+              if (upperText.trim()) {
+                validateDiscountCode(upperText);
+              } else {
+                setDiscountError('Enter a valid code.');
+              }
+            }}
+            placeholder={DEFAULT_DISCOUNT_CODE}
+            placeholderTextColor={Colors.textMuted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            style={[styles.input, discountError ? styles.inputError : null]}
+            maxLength={30}
+          />
+          {loadingDiscounts ? (
+            <Text style={styles.helperText}>Loading discount codes…</Text>
+          ) : discountError ? (
+            <Text style={styles.errorText}>{discountError}</Text>
+          ) : (
+            <Text style={styles.helperText}>Default code applied: {DEFAULT_DISCOUNT_CODE}</Text>
+          )}
 
           <View style={styles.gameSummary}>
             <Text style={styles.gameSummaryLabel}>Selected Game</Text>
@@ -200,6 +292,19 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     padding: 14,
     marginTop: 8,
+  },
+  inputError: {
+    borderColor: Colors.danger,
+  },
+  helperText: {
+    color: Colors.textSecondary,
+    fontSize: Typography.xs,
+    marginTop: -8,
+  },
+  errorText: {
+    color: Colors.danger,
+    fontSize: Typography.xs,
+    marginTop: -8,
   },
   gameSummaryLabel: {
     color: Colors.textSecondary,
