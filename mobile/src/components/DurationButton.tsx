@@ -13,6 +13,7 @@ import {
   formatRs,
   getBasePriceForDuration,
   applyIntroDiscount,
+  applyDiscountToAmount,
   INTRO_OFFER_DISCOUNT_PERCENT,
 } from '../utils/pricing';
 
@@ -21,6 +22,8 @@ interface Props {
   selected: boolean;
   onPress: () => void;
   price15Minutes?: number;
+  discountPercent?: number;
+  discountCode?: string;
 }
 
 const DURATION_META: Record<SessionDuration, { label: string; sublabel: string; multiplier: number; color: string }> = {
@@ -28,10 +31,24 @@ const DURATION_META: Record<SessionDuration, { label: string; sublabel: string; 
   30: { label: '30', sublabel: 'minutes', multiplier: 2, color: Colors.duration30 },
 };
 
-export default function DurationButton({ minutes, selected, onPress, price15Minutes = 250 }: Props) {
+export default function DurationButton({
+  minutes,
+  selected,
+  onPress,
+  price15Minutes = 250,
+  discountPercent = 0,
+  discountCode,
+}: Props) {
   const meta = DURATION_META[minutes];
   const basePrice = getBasePriceForDuration(price15Minutes, minutes);
-  const discountedPrice = applyIntroDiscount(basePrice);
+  const introDiscountedPrice = applyIntroDiscount(basePrice);
+  const finalDiscountedPrice = discountPercent > 0
+    ? applyDiscountToAmount(introDiscountedPrice, discountPercent)
+    : introDiscountedPrice;
+  const displayedDiscountLabel = discountPercent > 0
+    ? `${discountPercent}% OFF`
+    : `${INTRO_OFFER_DISCOUNT_PERCENT}% OFF`;
+  const displayCode = discountCode || 'DZVR-INTRO';
 
   return (
     <TouchableOpacity
@@ -59,10 +76,10 @@ export default function DurationButton({ minutes, selected, onPress, price15Minu
             {formatRs(basePrice)} per person
           </Text>
           <Text style={[styles.price, selected && styles.priceSelected]}>
-            {formatRs(discountedPrice)} per person
+            {formatRs(finalDiscountedPrice)} per person
           </Text>
           <Text style={[styles.offerTag, selected && styles.offerTagSelected]}>
-            Intro Offer {INTRO_OFFER_DISCOUNT_PERCENT}% OFF
+            {displayCode} • {displayedDiscountLabel}
           </Text>
         </View>
         {selected && <View style={styles.selectedDot} />}

@@ -97,6 +97,7 @@ export interface Session {
   price_15_minutes?: number | null;
   total_price?: number | null;
   discount_percent?: number | null;
+  discount_code?: string | null;
 }
 
 export interface SessionCreatePayload {
@@ -163,6 +164,9 @@ export interface NexSession {
   players: number;
   station_codes: string[];
   created_at: string;
+  total_price?: number | null;
+  discount_percent?: number | null;
+  discount_code?: string | null;
 }
 
 export interface NexSessionCreatePayload {

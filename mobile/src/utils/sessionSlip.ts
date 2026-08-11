@@ -57,6 +57,7 @@ export function buildSessionSlipHtml(
   const taxableAmount = discountedSubtotal ?? originalPrice;
   const gstAmount = taxableAmount !== null ? addGst(taxableAmount) - taxableAmount : null;
   const finalAmount = taxableAmount !== null ? addGst(taxableAmount) : null;
+  const discountCode = session.discount_code ?? 'DZVR-INTRO';
   const contactName = playerContact?.name ? escapeHtml(playerContact.name) : 'Guest';
   const normalizedPhone = playerContact?.phone ? playerContact.phone.replace(/\D/g, '') : '';
   const contactPhone = normalizedPhone ? escapeHtml(normalizedPhone) : 'N/A';
@@ -228,6 +229,14 @@ export function buildSessionSlipHtml(
       <span class="value accent">${escapeHtml(`${formatRs(taxableAmount)} per person`)}</span>
       ${originalPrice !== null && originalPrice > taxableAmount ? `<span class="offer">${escapeHtml(`${discountPercent}% OFF`)}</span>` : ''}
     </span>
+  </div>
+  <div class="row">
+    <span class="label">Promo Code</span>
+    <span class="value">${escapeHtml(discountCode)}</span>
+  </div>
+  <div class="row">
+    <span class="label">Discount Applied</span>
+    <span class="value">${escapeHtml(`${discountPercent}% OFF`)}</span>
   </div>
   <div class="row">
     <span class="label">GST (${GST_PERCENT}%)</span>

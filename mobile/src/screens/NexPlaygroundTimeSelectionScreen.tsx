@@ -28,6 +28,11 @@ import {
   type SessionDuration,
   type NexStation,
 } from '../types';
+import {
+  addGst,
+  applyDiscountToAmount,
+  getDiscountedPriceForDuration,
+} from '../utils/pricing';
 import type { NexPlaygroundTimeSelectionProps } from '../navigation/types';
 
 const MAX_PLAYERS = 4;
@@ -41,6 +46,8 @@ export default function NexPlaygroundTimeSelectionScreen({
 
   const selectedGame = useNexSessionStore((s) => s.selectedGame);
   const playerContact = useNexSessionStore((s) => s.playerContact);
+  const discountCode = useNexSessionStore((s) => s.discountCode);
+  const discountPercent = useNexSessionStore((s) => s.discountPercent);
   const setSelectedDuration = useNexSessionStore((s) => s.setSelectedDuration);
   const setSelectedPlayers = useNexSessionStore((s) => s.setSelectedPlayers);
   const setConfirmedSession = useNexSessionStore((s) => s.setConfirmedSession);
@@ -76,10 +83,13 @@ export default function NexPlaygroundTimeSelectionScreen({
     if (!selectedDuration) return;
 
     const stationList = stations.map((s) => s.code).join(', ');
+    const introPrice = getDiscountedPriceForDuration(250, selectedDuration);
+    const discountedPrice = applyDiscountToAmount(introPrice, discountPercent);
+    const finalPrice = addGst(discountedPrice);
 
     Alert.alert(
       'Confirm Nex Session',
-      `Game: ${selectedGame?.name}\nPlayers: ${players}\nStations: ${stationList || 'N/A'}\nDuration: ${selectedDuration} minutes`,
+      `Game: ${selectedGame?.name}\nPlayers: ${players}\nStations: ${stationList || 'N/A'}\nDuration: ${selectedDuration} minutes\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nFinal Price incl GST: ${finalPrice.toFixed(2)}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -94,7 +104,13 @@ export default function NexPlaygroundTimeSelectionScreen({
                 duration_minutes: selectedDuration,
                 players,
               });
-              setConfirmedSession(session);
+              const payout = addGst(applyDiscountToAmount(getDiscountedPriceForDuration(250, selectedDuration), discountPercent));
+              setConfirmedSession({
+                ...session,
+                discount_percent: discountPercent,
+                discount_code: discountCode,
+                total_price: payout,
+              } as any);
               navigation.navigate('NexPlaygroundSessionSummary', {
                 sessionId: session.id,
               });
@@ -206,6 +222,8 @@ export default function NexPlaygroundTimeSelectionScreen({
                 minutes={d}
                 selected={selectedDuration === d}
                 onPress={() => chooseDuration(d)}
+                discountPercent={discountPercent}
+                discountCode={discountCode}
               />
             ))}
           </View>

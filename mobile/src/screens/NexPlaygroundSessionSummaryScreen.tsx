@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { printSessionSlip, shareSessionSlip } from '../utils/print';
+import { addGst, formatRs, GST_PERCENT } from '../utils/pricing';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useNexSessionStore } from '../store/nexSessionStore';
@@ -39,6 +40,10 @@ function buildNexSlipHtml(
   const contactName = playerContact?.name ? playerContact.name : 'Guest';
   const normalizedPhone = playerContact?.phone ? playerContact.phone.replace(/\D/g, '') : '';
   const contactPhone = normalizedPhone || 'N/A';
+  const discountCode = session.discount_code ?? 'DZVR-INTRO';
+  const discountPercent = session.discount_percent ?? 0;
+  const finalAmount = typeof session.total_price === 'number' ? session.total_price : 0;
+  const gstAmount = typeof session.total_price === 'number' ? finalAmount - (finalAmount / (1 + GST_PERCENT / 100)) : 0;
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Nex Session Slip</title>
@@ -65,6 +70,10 @@ function buildNexSlipHtml(
 <div class="row highlight"><span class="label">Players</span><span class="value">${session.players}</span></div>
 <div class="row highlight"><span class="label">Stations</span><span class="value">${session.station_codes.join(', ') || 'N/A'}</span></div>
 <div class="row"><span class="label">Duration</span><span class="value">${session.duration_minutes} minutes</span></div>
+<div class="row"><span class="label">Promo Code</span><span class="value">${discountCode}</span></div>
+<div class="row"><span class="label">Discount Applied</span><span class="value">${discountPercent}% OFF</span></div>
+<div class="row"><span class="label">GST (18%)</span><span class="value">${formatRs(gstAmount)}</span></div>
+<div class="row highlight"><span class="label">Final Amount incl GST</span><span class="value">${formatRs(finalAmount)}</span></div>
 <div class="row"><span class="label">Date</span><span class="value">${dateStr}</span></div>
 <div class="row"><span class="label">Time</span><span class="value">${timeStr}</span></div>
 <hr/>
@@ -153,6 +162,11 @@ export default function NexPlaygroundSessionSummaryScreen({
   const timeStr = createdAt.toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit',
   });
+  const discountCode = useNexSessionStore((s) => s.discountCode);
+  const discountPercent = session.discount_percent ?? 0;
+  const subtotalBeforeGst = typeof session.total_price === 'number' ? session.total_price / (1 + GST_PERCENT / 100) : 0;
+  const gstAmount = typeof session.total_price === 'number' ? session.total_price - subtotalBeforeGst : 0;
+  const finalAmount = typeof session.total_price === 'number' ? session.total_price : addGst(subtotalBeforeGst);
 
   return (
     <View style={styles.container}>
@@ -182,6 +196,10 @@ export default function NexPlaygroundSessionSummaryScreen({
             highlight
           />
           <SlipRow label="Duration" value={`${session.duration_minutes} minutes`} />
+          <SlipRow label="Promo Code" value={discountCode} />
+          <SlipRow label="Discount Applied" value={`${discountPercent}% OFF`} />
+          <SlipRow label="GST (18%)" value={formatRs(gstAmount)} />
+          <SlipRow label="Final Amount incl GST" value={formatRs(finalAmount)} highlight />
           <SlipRow label="Date" value={dateStr} />
           <SlipRow label="Time" value={timeStr} />
           <View style={styles.divider} />

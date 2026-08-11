@@ -27,6 +27,8 @@ import { buildSessionSlipHtml } from '../utils/sessionSlip';
 import { printSessionSlip } from '../utils/print';
 import {
   formatRs,
+  applyDiscountToAmount,
+  addGst,
   getBase15MinutePrice,
   getBasePriceForDuration,
   getDiscountedPriceForDuration,
@@ -46,6 +48,8 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
   const { gameId } = route.params;
   const selectedGame = useSessionStore((s) => s.selectedGame);
   const playerContact = useSessionStore((s) => s.playerContact);
+  const discountCode = useSessionStore((s) => s.discountCode);
+  const discountPercent = useSessionStore((s) => s.discountPercent);
   const setSelectedDuration = useSessionStore((s) => s.setSelectedDuration);
   const setConfirmedSession = useSessionStore((s) => s.setConfirmedSession);
 
@@ -77,9 +81,10 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
       .map((i) => i.headset_code)
       .join(', ');
     const basePrice = getBasePriceForDuration(price15Minutes, selectedDuration);
-    const discountedPrice = getDiscountedPriceForDuration(price15Minutes, selectedDuration);
-    const finalPriceInclGst = getFinalPriceWithGst(price15Minutes, selectedDuration);
-    const gstAmount = finalPriceInclGst - discountedPrice;
+    const introDiscountedPrice = getDiscountedPriceForDuration(price15Minutes, selectedDuration);
+    const promoDiscountedPrice = applyDiscountToAmount(introDiscountedPrice, discountPercent);
+    const finalPriceInclGst = addGst(promoDiscountedPrice);
+    const gstAmount = finalPriceInclGst - promoDiscountedPrice;
     const sessionInfoCreatedAt = new Date();
     const createdDate = sessionInfoCreatedAt.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -99,7 +104,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
 
     Alert.alert(
       'Confirm Session',
-      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nDiscount: ${INTRO_OFFER_DISCOUNT_PERCENT}% OFF\nGST (18%): ${formatRs(gstAmount)}\nFinal Price incl GST: ${formatRs(finalPriceInclGst)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
+      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nGST (18%): ${formatRs(gstAmount)}\nFinal Price incl GST: ${formatRs(finalPriceInclGst)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -112,21 +117,17 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 game_id: gameId,
                 duration_minutes: selectedDuration,
               });
-              const html = buildSessionSlipHtml({
+              const confirmedSessionPayload = {
                 ...session,
                 pricing_category: selectedGame?.pricing_category ?? null,
                 price_15_minutes: price15Minutes,
-                total_price: getFinalPriceWithGst(price15Minutes, selectedDuration),
-                discount_percent: 15,
-              }, playerContact ?? undefined);
+                total_price: finalPriceInclGst,
+                discount_percent: discountPercent,
+                discount_code: discountCode,
+              };
+              const html = buildSessionSlipHtml(confirmedSessionPayload, playerContact ?? undefined);
               await printSessionSlip(html);
-              setConfirmedSession({
-                ...session,
-                pricing_category: selectedGame?.pricing_category ?? null,
-                price_15_minutes: price15Minutes,
-                total_price: getFinalPriceWithGst(price15Minutes, selectedDuration),
-                discount_percent: 15,
-              });
+              setConfirmedSession(confirmedSessionPayload);
               navigation.navigate('SessionSummary', { sessionId: session.id });
             } catch (e: any) {
               Alert.alert('Error', e.message ?? 'Could not create session. Please try again.');
@@ -251,6 +252,8 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 price15Minutes={price15Minutes}
                 selected={selectedDuration === d}
                 onPress={() => chooseDuration(d)}
+                discountPercent={discountPercent}
+                discountCode={discountCode}
               />
             ))}
           </View>
@@ -265,7 +268,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
           <View style={styles.discountNote}>
             <Ionicons name="pricetag-outline" size={15} color={Colors.warning} />
             <Text style={styles.discountNoteText}>
-              Intro offer applied: 15% discount is already reflected in the prices above.
+              Applied discount: {discountCode} • {discountPercent}% OFF. Final amount includes 18% GST.
             </Text>
           </View>
         </View>

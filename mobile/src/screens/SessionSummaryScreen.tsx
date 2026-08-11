@@ -40,6 +40,7 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
   const { sessionId } = route.params;
   const confirmedSession = useSessionStore((s) => s.confirmedSession);
   const playerContact = useSessionStore((s) => s.playerContact);
+  const discountCode = useSessionStore((s) => s.discountCode);
   const resetFlow = useSessionStore((s) => s.resetFlow);
 
   const [session, setSession] = useState<Session | null>(confirmedSession);
@@ -170,11 +171,10 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
                   <Text style={styles.priceOriginal}>{formatRs(originalPrice)} per person</Text>
                 )}
                 <Text style={styles.priceDiscounted}>{formatRs(taxableAmount)} per person</Text>
-                {originalPrice !== null && originalPrice > taxableAmount && (
-                  <Text style={styles.priceDiscountTag}>{discountPercent}% OFF</Text>
-                )}
+                <Text style={styles.priceDiscountTag}>Promo code: {discountCode}</Text>
+                <Text style={styles.priceDiscountTag}>Discount applied: {discountPercent}% OFF</Text>
                 <Text style={styles.priceDiscountTag}>GST ({GST_PERCENT}%): {formatRs(gstAmount)}</Text>
-                <Text style={styles.priceDiscounted}>Total incl GST: {formatRs(finalPrice)}</Text>
+                <Text style={styles.priceDiscounted}>Final amount incl GST: {formatRs(finalPrice)}</Text>
               </View>
             </View>
           )}
