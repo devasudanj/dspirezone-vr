@@ -18,7 +18,7 @@
         "backgroundColor": "#0D0D1A"
       },
       "package": "com.dspirevr.zone",
-      "versionCode": 6,
+      "versionCode": 7,
       "compileSdkVersion": 35,
       "targetSdkVersion": 35,
       "minSdkVersion": 24,
