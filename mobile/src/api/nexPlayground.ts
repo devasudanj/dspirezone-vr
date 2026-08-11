@@ -1,20 +1,19 @@
 /**
  * src/api/nexPlayground.ts
  * ------------------------
- * API calls for the Nex Playground endpoints.
+ * API calls for the Nex Playground screens.
  *
- * TODO(backend): Wire these to real FastAPI routes once
- * backend/routers/nex_games.py is implemented:
- *   GET  /nex-games/                  → list
- *   GET  /nex-games/{id}              → detail
- *   POST /nex-games/{id}/visit        → visit counter
- *   GET  /nex-stations/               → active stations
- *   POST /nex-sessions/               → create session
- *   GET  /nex-sessions/{id}           → fetch session
+ * The game library + game detail are sourced from the existing /games backend
+ * endpoints so the Nex flow always reflects live backend data.
  *
- * Until then, all functions return mock data after a simulated network delay.
+ * Nex stations and Nex sessions remain mock-backed until dedicated backend
+ * routes are introduced.
  */
+import client from './client';
 import type {
+  Game,
+  GameListItem,
+  GameCategory,
   NexGame,
   NexGameCategory,
   NexGameListItem,
@@ -22,6 +21,21 @@ import type {
   NexSessionCreatePayload,
   NexStation,
 } from '../types';
+
+interface NexApiGame {
+  id: number;
+  name: string;
+  description?: string;
+  status?: string;
+  is_available?: boolean;
+  station_id?: number;
+  category?: string;
+  thumbnail_url?: string;
+}
+
+interface NexApiListResponse {
+  items: NexApiGame[];
+}
 
 // ---------------------------------------------------------------------------
 // Mock data
@@ -119,6 +133,102 @@ function mockDelay<T>(data: T, ms = 600): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
+function toNexCategory(category: GameCategory): NexGameCategory {
+  return category;
+}
+
+function normalizeNexStatus(status?: string): 'ACTIVE' | 'EXPIRED' | 'DISABLED' {
+  if (!status) return 'ACTIVE';
+  const normalized = status.toLowerCase();
+  if (normalized === 'active') return 'ACTIVE';
+  if (normalized === 'disabled' || normalized === 'inactive') return 'DISABLED';
+  return 'EXPIRED';
+}
+
+function normalizeNexCategory(category?: string): NexGameCategory {
+  const known: readonly NexGameCategory[] = [
+    'Action',
+    'Adventure',
+    'Kids',
+    'Horror',
+    'Educational',
+    'Sports',
+    'Simulation',
+    'Puzzle',
+    'Other',
+    'Dance',
+    'Multiplayer',
+  ];
+  if (!category) return 'Other';
+  const match = known.find((value) => value.toLowerCase() === category.toLowerCase());
+  return match ?? 'Other';
+}
+
+function mapGameListItemToNex(item: GameListItem): NexGameListItem {
+  return {
+    id: String(item.id),
+    name: item.name,
+    category: toNexCategory(item.category),
+    thumbnail_url: item.thumbnail_url,
+    status: item.status,
+  };
+}
+
+function mapGameToNex(game: Game): NexGame {
+  return {
+    id: String(game.id),
+    name: game.name,
+    description: game.description,
+    category: toNexCategory(game.category),
+    thumbnail_url: game.thumbnail_url,
+    trailer_url: game.video_url ?? game.youtube_url,
+    min_players: game.is_multiplayer ? 2 : 1,
+    max_players: game.is_multiplayer ? 4 : 2,
+    min_age: game.viewable_age,
+    status: game.status,
+  };
+}
+
+function mapNexApiGameListItem(item: NexApiGame): NexGameListItem {
+  return {
+    id: String(item.id),
+    name: item.name,
+    category: normalizeNexCategory(item.category),
+    thumbnail_url: item.thumbnail_url ?? 'https://via.placeholder.com/300x180',
+    status: normalizeNexStatus(item.status),
+  };
+}
+
+function mapNexApiGameDetail(item: NexApiGame): NexGame {
+  return {
+    id: String(item.id),
+    name: item.name,
+    description: item.description ?? '',
+    category: normalizeNexCategory(item.category),
+    thumbnail_url: item.thumbnail_url ?? 'https://via.placeholder.com/600x340',
+    trailer_url: null,
+    min_players: 1,
+    max_players: 4,
+    min_age: null,
+    status: normalizeNexStatus(item.status),
+  };
+}
+
+function parseGameId(gameId: string): number {
+  const direct = Number(gameId);
+  if (Number.isInteger(direct) && direct > 0) {
+    return direct;
+  }
+
+  // Backward compatibility with legacy IDs like "nex-001".
+  const suffixMatch = gameId.match(/(\d+)$/);
+  const fromSuffix = suffixMatch ? Number(suffixMatch[1]) : Number.NaN;
+  if (!Number.isInteger(fromSuffix) || fromSuffix <= 0) {
+    throw new Error('Invalid game ID');
+  }
+  return fromSuffix;
+}
+
 // ---------------------------------------------------------------------------
 // Public API functions
 // ---------------------------------------------------------------------------
@@ -127,37 +237,54 @@ function mockDelay<T>(data: T, ms = 600): Promise<T> {
 export async function fetchNexGames(
   category?: NexGameCategory,
 ): Promise<NexGameListItem[]> {
-  // TODO(backend): replace with real API call:
-  // const params: Record<string, string> = { status: 'ACTIVE' };
-  // if (category) params.category = category;
-  // const { data } = await client.get<NexGameListItem[]>('/nex-games/', { params });
-  // return data;
+  const params: Record<string, string> = { status: 'active' };
+  if (category) params.category = category;
 
-  const filtered = MOCK_GAMES.filter(
-    (g) => g.status === 'ACTIVE' && (!category || g.category === category),
-  );
-  const items: NexGameListItem[] = filtered.map(({ id, name, category, thumbnail_url, status }) => ({
-    id,
-    name,
-    category,
-    thumbnail_url,
-    status,
-  }));
-  return mockDelay(items);
+  const { data } = await client.get<NexApiListResponse | Array<NexGameListItem | GameListItem | NexApiGame>>('/api/nex-games/', {
+    params,
+  });
+
+  const items = Array.isArray(data)
+    ? data
+    : Array.isArray((data as NexApiListResponse).items)
+      ? (data as NexApiListResponse).items
+      : [];
+
+  return items.map((item) => {
+    if (item && typeof item === 'object' && 'station_id' in item) {
+      return mapNexApiGameListItem(item as NexApiGame);
+    }
+    if (typeof item.id === 'string') {
+      return item as NexGameListItem;
+    }
+    return mapGameListItemToNex(item as GameListItem);
+  });
 }
 
 /** Return full details for a single Nex game. */
 export async function fetchNexGame(gameId: string): Promise<NexGame> {
-  // TODO(backend): const { data } = await client.get<NexGame>(`/nex-games/${gameId}`);
-  const game = MOCK_GAMES.find((g) => g.id === gameId);
-  if (!game) throw new Error('Nex game not found');
-  return mockDelay(game);
+  const parsedId = parseGameId(gameId);
+  try {
+    const { data } = await client.get<NexGame | Game | NexApiGame>(`/api/nex-games/${parsedId}`);
+    if (data && typeof data === 'object' && 'station_id' in data) {
+      return mapNexApiGameDetail(data as NexApiGame);
+    }
+    if (typeof data.id === 'string') {
+      return data as NexGame;
+    }
+    return mapGameToNex(data as Game);
+  } catch (error: any) {
+    if (String(error?.message ?? '').toLowerCase().includes('game not found')) {
+      throw new Error('Nex game not found');
+    }
+    throw error;
+  }
 }
 
 /** Increment the visit counter for a Nex game (fire-and-forget). */
 export async function recordNexGameVisit(gameId: string): Promise<void> {
-  // TODO(backend): await client.post(`/nex-games/${gameId}/visit`);
-  return mockDelay(undefined);
+  const parsedId = parseGameId(gameId);
+  await client.post(`/api/nex-games/${parsedId}/visit`);
 }
 
 /** Return all active Nex stations in the venue. */
@@ -172,12 +299,21 @@ export async function createNexSession(
 ): Promise<NexSession> {
   // TODO(backend): const { data } = await client.post<NexSession>('/nex-sessions/', payload);
   const game = MOCK_GAMES.find((g) => g.id === payload.game_id);
+  let gameName = game?.name ?? 'Unknown Game';
+  if (!game && /^\d+$/.test(payload.game_id)) {
+    try {
+      const backendGame = await fetchNexGame(payload.game_id);
+      gameName = backendGame.name;
+    } catch {
+      // Keep fallback name when backend detail is unavailable.
+    }
+  }
   const sessionId = `NSS-${Date.now()}`;
   const session: NexSession = {
     id: sessionId,
     session_code: `NEX-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
     game_id: payload.game_id,
-    game_name: game?.name ?? 'Unknown Game',
+    game_name: gameName,
     duration_minutes: payload.duration_minutes,
     players: payload.players,
     station_codes: MOCK_STATIONS.filter((s) => s.is_active)

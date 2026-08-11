@@ -1,7 +1,7 @@
 /**
  * src/screens/TimeSelectionScreen.tsx
  * -------------------------------------
- * Player picks a session duration (10 / 30 / 45 / 60 minutes).
+ * Player picks a session duration (15 / 30 minutes).
  * Available headsets are shown as informational chips – not selectable.
  * On confirmation → POST /sessions → SessionSummaryScreen.
  */
@@ -23,6 +23,13 @@ import DurationButton from '../components/DurationButton';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
+import {
+  formatRs,
+  getBase15MinutePrice,
+  getBasePriceForDuration,
+  getDiscountedPriceForDuration,
+  INTRO_OFFER_DISCOUNT_PERCENT,
+} from '../utils/pricing';
 import { SESSION_DURATIONS, type SessionDuration, type Installation } from '../types';
 import type { TimeSelectionProps } from '../navigation/types';
 
@@ -44,6 +51,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
   const [loading, setLoading] = useState(false);
 
   const isMultiplayer = selectedGame?.is_multiplayer ?? false;
+  const price15Minutes = getBase15MinutePrice(selectedGame);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,12 +72,28 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
     const headsetList = installations
       .map((i) => i.headset_code)
       .join(', ');
+    const basePrice = getBasePriceForDuration(price15Minutes, selectedDuration);
+    const discountedPrice = getDiscountedPriceForDuration(price15Minutes, selectedDuration);
+    const sessionInfoCreatedAt = new Date();
+    const createdDate = sessionInfoCreatedAt.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'Asia/Kolkata',
+    });
+    const createdTime = sessionInfoCreatedAt.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'Asia/Kolkata',
+    });
 
     const modeLabel = isMultiplayer ? (playMode === 'multiplayer' ? 'Multiplayer' : 'Solo') : 'Solo';
 
     Alert.alert(
       'Confirm Session',
-      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes`,
+      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nDiscount: ${INTRO_OFFER_DISCOUNT_PERCENT}% OFF\nFinal Price: ${formatRs(discountedPrice)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -82,7 +106,13 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 game_id: gameId,
                 duration_minutes: selectedDuration,
               });
-              setConfirmedSession(session);
+              setConfirmedSession({
+                ...session,
+                pricing_category: selectedGame?.pricing_category ?? null,
+                price_15_minutes: price15Minutes,
+                total_price: getDiscountedPriceForDuration(price15Minutes, selectedDuration),
+                discount_percent: 15,
+              });
               navigation.navigate('SessionSummary', { sessionId: session.id });
             } catch (e: any) {
               Alert.alert('Error', e.message ?? 'Could not create session. Please try again.');
@@ -204,17 +234,24 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
               <DurationButton
                 key={d}
                 minutes={d}
+                price15Minutes={price15Minutes}
                 selected={selectedDuration === d}
                 onPress={() => chooseDuration(d)}
               />
             ))}
           </View>
 
+          {selectedGame?.pricing_category && (
+            <Text style={styles.pricingMeta}>
+              Pricing category: {selectedGame.pricing_category}
+            </Text>
+          )}
+
           {/* Discount note */}
           <View style={styles.discountNote}>
             <Ionicons name="pricetag-outline" size={15} color={Colors.warning} />
             <Text style={styles.discountNoteText}>
-              Any available discounts will be applied at the counter during payment.
+              Intro offer applied: 15% discount is already reflected in the prices above.
             </Text>
           </View>
         </View>
@@ -405,6 +442,13 @@ const styles = StyleSheet.create({
     color: Colors.warning,
     fontSize: Typography.sm,
     lineHeight: 18,
+  },
+  pricingMeta: {
+    color: Colors.warning,
+    fontSize: Typography.sm,
+    fontWeight: Typography.semibold,
+    textAlign: 'center',
+    marginTop: -12,
   },
 
   footer: {

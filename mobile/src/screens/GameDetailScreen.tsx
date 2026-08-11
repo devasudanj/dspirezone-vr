@@ -186,6 +186,12 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
 
           {/* Badges row: age, multiplayer, visits */}
           <View style={styles.badgeRow}>
+            {game.pricing_category && (
+              <View style={styles.pricingBadge}>
+                <Ionicons name="pricetag-outline" size={12} color={Colors.warning} />
+                <Text style={styles.pricingBadgeText}>{game.pricing_category}</Text>
+              </View>
+            )}
             {game.viewable_age != null && (
               <View style={styles.ageBadge}>
                 <Ionicons name="person" size={12} color={Colors.textOnPrimary} />
@@ -384,6 +390,20 @@ const styles = StyleSheet.create({
   visitsText: {
     color: Colors.textSecondary,
     fontSize: Typography.xs,
+  },
+  pricingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.warning + '22',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  pricingBadgeText: {
+    color: Colors.warning,
+    fontSize: Typography.xs,
+    fontWeight: Typography.semibold,
   },
 
   description: {

@@ -1,8 +1,9 @@
 /**
  * __tests__/nexPlayground.api.test.ts
  * ------------------------------------
- * Unit tests for the Nex Playground API layer (mock-backed functions).
+ * Unit tests for the Nex Playground API layer.
  */
+import client from '../src/api/client';
 import {
   fetchNexGames,
   fetchNexGame,
@@ -11,8 +12,34 @@ import {
   fetchNexSession,
 } from '../src/api/nexPlayground';
 
+jest.mock('../src/api/client', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn(),
+    post: jest.fn(),
+  },
+}));
+
+const mockedClient = client as jest.Mocked<typeof client>;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 describe('fetchNexGames', () => {
   it('returns a non-empty list of active games', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: [
+        {
+          id: 1,
+          name: 'Beat Saber',
+          category: 'Action',
+          thumbnail_url: 'https://example.com/beat.jpg',
+          status: 'ACTIVE',
+        },
+      ],
+    });
+
     const games = await fetchNexGames();
     expect(games.length).toBeGreaterThan(0);
     games.forEach((g) => {
@@ -23,27 +50,66 @@ describe('fetchNexGames', () => {
   });
 
   it('filters by category when provided', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'nex-10',
+          name: 'Dance Universe',
+          category: 'Dance',
+          thumbnail_url: 'https://example.com/dance.jpg',
+          status: 'ACTIVE',
+        },
+      ],
+    });
+
     const danceGames = await fetchNexGames('Dance');
     expect(danceGames.every((g) => g.category === 'Dance')).toBe(true);
+    expect(mockedClient.get).toHaveBeenCalledWith('/api/nex-games/', {
+      params: { status: 'active', category: 'Dance' },
+    });
   });
 
-  it('returns empty list for a category with no games', async () => {
-    const games = await fetchNexGames('Other');
+  it('returns empty list when backend returns no games for a category', async () => {
+    mockedClient.get.mockResolvedValueOnce({ data: [] });
+    const games = await fetchNexGames('Multiplayer');
     expect(games).toEqual([]);
+    expect(mockedClient.get).toHaveBeenCalledWith('/api/nex-games/', {
+      params: { status: 'active', category: 'Multiplayer' },
+    });
   });
 });
 
 describe('fetchNexGame', () => {
   it('returns a game by valid ID', async () => {
-    const game = await fetchNexGame('nex-001');
-    expect(game.id).toBe('nex-001');
-    expect(game.name).toBe('Beat Blaster');
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        id: 1,
+        name: 'Beat Saber',
+        description: 'Rhythm slicing game',
+        category: 'Action',
+        thumbnail_url: 'https://example.com/beat.jpg',
+        video_url: null,
+        youtube_url: null,
+        viewable_age: 10,
+        is_multiplayer: false,
+        visit_count: 0,
+        status: 'ACTIVE',
+        created_at: new Date().toISOString(),
+      },
+    });
+
+    const game = await fetchNexGame('1');
+    expect(mockedClient.get).toHaveBeenCalledWith('/api/nex-games/1');
+    expect(game.id).toBe('1');
+    expect(game.name).toBe('Beat Saber');
     expect(typeof game.description).toBe('string');
     expect(game.description.length).toBeGreaterThan(0);
   });
 
   it('throws for an unknown ID', async () => {
-    await expect(fetchNexGame('nex-unknown-999')).rejects.toThrow('Nex game not found');
+    mockedClient.get.mockRejectedValueOnce(new Error('Game not found'));
+    await expect(fetchNexGame('999')).rejects.toThrow('Nex game not found');
+    expect(mockedClient.get).toHaveBeenCalledWith('/api/nex-games/999');
   });
 });
 
@@ -75,7 +141,7 @@ describe('createNexSession', () => {
   it('assigns station codes up to the player count', async () => {
     const session = await createNexSession({
       game_id: 'nex-002',
-      duration_minutes: 10,
+      duration_minutes: 15,
       players: 1,
     });
     expect(session.station_codes.length).toBeLessThanOrEqual(1);

@@ -45,7 +45,7 @@ def create_session(payload: SessionCreate, db: DBSession = Depends(get_db)):
     Validation rules:
     - Game must exist and be ACTIVE.
     - At least one non-expired active installation must exist for the game.
-    - Duration must be one of 10, 30, 45, or 60 minutes.
+        - Duration must be one of 15 or 30 minutes.
     - Headset is NOT chosen by the player; the first available headset is used
       for record-keeping purposes only.
     """

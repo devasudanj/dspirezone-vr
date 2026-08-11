@@ -169,7 +169,7 @@ POST /sessions ──► SessionSummary ──► Print / Share PDF
 
 2. **No player auth**: Players use the app anonymously. Admin endpoints (`/admin/*`) should be protected by an API key or the existing admin portal's auth mechanism (not included here – integrate as needed).
 
-3. **Session durations are fixed**: 10 / 30 / 45 / 60 minutes. Validated both client-side (TypeScript) and server-side (Pydantic + SQLAlchemy layer).
+3. **Session durations are fixed**: 15 / 30 minutes. Validated both client-side (TypeScript) and server-side (Pydantic + SQLAlchemy layer).
 
 4. **"Expiring Soon" threshold**: 7 days. Adjust `is_expiring_soon` property in `models.py` if needed.
 

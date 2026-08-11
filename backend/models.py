@@ -41,7 +41,7 @@ class GameCategory(str, PyEnum):
     OTHER = "Other"
 
 
-VALID_DURATIONS = {10, 30, 45, 60}  # allowed session durations in minutes
+VALID_DURATIONS = {15, 30}  # allowed session durations in minutes
 
 
 # ---------------------------------------------------------------------------

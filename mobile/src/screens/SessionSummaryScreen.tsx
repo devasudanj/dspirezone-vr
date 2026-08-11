@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchSession } from '../api/sessions';
 import { buildSessionSlipHtml } from '../utils/sessionSlip';
 import { printSessionSlip, shareSessionSlip } from '../utils/print';
+import { formatRs, getSessionDisplayPrice, getSessionOriginalPrice, INTRO_OFFER_DISCOUNT_PERCENT } from '../utils/pricing';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
@@ -98,13 +99,20 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
     );
   }
 
-  const createdAt = new Date(session.created_at);
+  // Use the local confirmation moment and render it in IST for on-screen consistency.
+  const createdAt = new Date();
   const dateStr = createdAt.toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    timeZone: 'Asia/Kolkata',
   });
   const timeStr = createdAt.toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Kolkata',
   });
+  const displayPrice = getSessionDisplayPrice(session);
+  const originalPrice = getSessionOriginalPrice(session);
+  const discountPercent = session.discount_percent ?? INTRO_OFFER_DISCOUNT_PERCENT;
 
   return (
     <View style={styles.container}>
@@ -133,6 +141,21 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
             highlight
           />
           <SlipRow label="Duration" value={`${session.duration_minutes} minutes`} />
+          {session.pricing_category && <SlipRow label="Pricing Category" value={session.pricing_category} />}
+          {displayPrice !== null && (
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Price</Text>
+              <View style={styles.priceValueWrap}>
+                {originalPrice !== null && originalPrice > displayPrice && (
+                  <Text style={styles.priceOriginal}>{formatRs(originalPrice)} per person</Text>
+                )}
+                <Text style={styles.priceDiscounted}>{formatRs(displayPrice)} per person</Text>
+                {originalPrice !== null && originalPrice > displayPrice && (
+                  <Text style={styles.priceDiscountTag}>{discountPercent}% OFF</Text>
+                )}
+              </View>
+            </View>
+          )}
           <SlipRow label="Date" value={dateStr} />
           <SlipRow label="Time" value={timeStr} />
 
@@ -267,6 +290,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
     gap: 4,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  priceLabel: {
+    color: Colors.textSecondary,
+    fontSize: Typography.base,
+  },
+  priceValueWrap: {
+    alignItems: 'flex-end',
+    maxWidth: '62%',
+  },
+  priceOriginal: {
+    color: Colors.textMuted,
+    fontSize: Typography.xs,
+    textDecorationLine: 'line-through',
+  },
+  priceDiscounted: {
+    color: Colors.accent,
+    fontSize: Typography.base,
+    fontWeight: Typography.bold,
+  },
+  priceDiscountTag: {
+    marginTop: 2,
+    color: Colors.warning,
+    fontSize: Typography.xs,
+    fontWeight: Typography.bold,
   },
   centerName: {
     color: Colors.primary,

@@ -9,22 +9,29 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import type { SessionDuration } from '../types';
+import {
+  formatRs,
+  getBasePriceForDuration,
+  applyIntroDiscount,
+  INTRO_OFFER_DISCOUNT_PERCENT,
+} from '../utils/pricing';
 
 interface Props {
   minutes: SessionDuration;
   selected: boolean;
   onPress: () => void;
+  price15Minutes?: number;
 }
 
-const DURATION_META: Record<SessionDuration, { label: string; sublabel: string; price: string; color: string }> = {
-  10: { label: '10', sublabel: 'minutes', price: '₹100', color: Colors.duration10 },
-  30: { label: '30', sublabel: 'minutes', price: '₹250', color: Colors.duration30 },
-  45: { label: '45', sublabel: 'minutes', price: '₹350', color: Colors.duration45 },
-  60: { label: '1 hr', sublabel: 'max',     price: '₹400', color: Colors.duration60 },
+const DURATION_META: Record<SessionDuration, { label: string; sublabel: string; multiplier: number; color: string }> = {
+  15: { label: '15', sublabel: 'minutes', multiplier: 1, color: Colors.duration10 },
+  30: { label: '30', sublabel: 'minutes', multiplier: 2, color: Colors.duration30 },
 };
 
-export default function DurationButton({ minutes, selected, onPress }: Props) {
+export default function DurationButton({ minutes, selected, onPress, price15Minutes = 250 }: Props) {
   const meta = DURATION_META[minutes];
+  const basePrice = getBasePriceForDuration(price15Minutes, minutes);
+  const discountedPrice = applyIntroDiscount(basePrice);
 
   return (
     <TouchableOpacity
@@ -47,8 +54,14 @@ export default function DurationButton({ minutes, selected, onPress }: Props) {
         <Text style={[styles.sublabel, selected && styles.sublabelSelected]}>
           {meta.sublabel}
         </Text>
+        <Text style={[styles.originalPrice, selected && styles.originalPriceSelected]}>
+          {formatRs(basePrice)} per person
+        </Text>
         <Text style={[styles.price, selected && styles.priceSelected]}>
-          {meta.price}
+          {formatRs(discountedPrice)} per person
+        </Text>
+        <Text style={[styles.offerTag, selected && styles.offerTagSelected]}>
+          Intro Offer {INTRO_OFFER_DISCOUNT_PERCENT}% OFF
         </Text>
         {selected && <View style={styles.selectedDot} />}
       </View>
@@ -86,13 +99,32 @@ const styles = StyleSheet.create({
     color: Colors.background,
     opacity: 0.8,
   },
+  originalPrice: {
+    color: Colors.textMuted,
+    fontSize: Typography.xs,
+    textDecorationLine: 'line-through',
+    marginTop: 2,
+  },
+  originalPriceSelected: {
+    color: Colors.background,
+    opacity: 0.75,
+  },
   price: {
     color: Colors.textPrimary,
     fontSize: Typography.base,
     fontWeight: Typography.bold,
-    marginTop: 2,
+    marginTop: 1,
   },
   priceSelected: {
+    color: Colors.background,
+  },
+  offerTag: {
+    color: Colors.warning,
+    fontSize: Typography.xs,
+    fontWeight: Typography.bold,
+    marginTop: 2,
+  },
+  offerTagSelected: {
     color: Colors.background,
   },
   selectedDot: {

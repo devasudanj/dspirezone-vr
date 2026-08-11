@@ -10,6 +10,12 @@
  *   - No external assets are referenced – everything is inline CSS.
  */
 import type { Session } from '../types';
+import {
+  formatRs,
+  getSessionDisplayPrice,
+  getSessionOriginalPrice,
+  INTRO_OFFER_DISCOUNT_PERCENT,
+} from './pricing';
 
 export function buildSessionSlipHtml(session: Session): string {
   const createdAt = new Date(session.created_at);
@@ -33,6 +39,9 @@ export function buildSessionSlipHtml(session: Session): string {
   const headsetLabel = session.headset_codes.length > 0
     ? session.headset_codes.join(', ')
     : 'N/A';
+  const displayPrice = getSessionDisplayPrice(session);
+  const originalPrice = getSessionOriginalPrice(session);
+  const discountPercent = session.discount_percent ?? INTRO_OFFER_DISCOUNT_PERCENT;
 
   return `
 <!DOCTYPE html>
@@ -97,7 +106,21 @@ export function buildSessionSlipHtml(session: Session): string {
       max-width: 60%;
     }
     .value.accent { color: #6c63ff; font-size: 16px; }
+    .value.strike {
+      color: #8a8a98;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: line-through;
+      display: block;
+    }
     .value.code   { color: #00d4ff; font-size: 18px; letter-spacing: 2px; }
+    .offer {
+      color: #f39c12;
+      font-size: 11px;
+      font-weight: 800;
+      display: block;
+      margin-top: 2px;
+    }
 
     /* ── Divider ── */
     .dashed {
@@ -166,6 +189,20 @@ export function buildSessionSlipHtml(session: Session): string {
     <span class="label">Duration</span>
     <span class="value">${escapeHtml(durationLabel)}</span>
   </div>
+  ${session.pricing_category ? `
+  <div class="row">
+    <span class="label">Pricing Category</span>
+    <span class="value">${escapeHtml(session.pricing_category)}</span>
+  </div>` : ''}
+  ${displayPrice !== null ? `
+  <div class="row">
+    <span class="label">Price</span>
+    <span class="value">
+      ${originalPrice !== null && originalPrice > displayPrice ? `<span class="value strike">${escapeHtml(`${formatRs(originalPrice)} per person`)}</span>` : ''}
+      <span class="value accent">${escapeHtml(`${formatRs(displayPrice)} per person`)}</span>
+      ${originalPrice !== null && originalPrice > displayPrice ? `<span class="offer">${escapeHtml(`${discountPercent}% OFF`)}</span>` : ''}
+    </span>
+  </div>` : ''}
   <div class="row">
     <span class="label">Date</span>
     <span class="value">${escapeHtml(dateStr)}</span>

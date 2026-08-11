@@ -53,8 +53,8 @@ describe('useNexSessionStore', () => {
   });
 
   it('setSelectedDuration updates duration', () => {
-    useNexSessionStore.getState().setSelectedDuration(45);
-    expect(useNexSessionStore.getState().selectedDuration).toBe(45);
+    useNexSessionStore.getState().setSelectedDuration(15);
+    expect(useNexSessionStore.getState().selectedDuration).toBe(15);
   });
 
   it('setSelectedPlayers updates player count', () => {

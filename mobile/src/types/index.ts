@@ -33,6 +33,8 @@ export interface GameListItem {
   category: GameCategory;
   thumbnail_url: string;
   status: GameStatus;
+  pricing_category?: string | null;
+  price_15_minutes?: number | null;
 }
 
 export interface Game {
@@ -48,6 +50,8 @@ export interface Game {
   visit_count: number;
   status: GameStatus;
   created_at: string; // ISO 8601
+  pricing_category?: string | null;
+  price_15_minutes?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +93,10 @@ export interface Session {
   game_name: string;
   /** All active headsets on which this game is installed. */
   headset_codes: string[];
+  pricing_category?: string | null;
+  price_15_minutes?: number | null;
+  total_price?: number | null;
+  discount_percent?: number | null;
 }
 
 export interface SessionCreatePayload {
@@ -101,7 +109,7 @@ export interface SessionCreatePayload {
 // ---------------------------------------------------------------------------
 
 /** Available session durations in minutes. */
-export const SESSION_DURATIONS = [10, 30, 45, 60] as const;
+export const SESSION_DURATIONS = [15, 30] as const;
 export type SessionDuration = (typeof SESSION_DURATIONS)[number];
 
 // ---------------------------------------------------------------------------
@@ -111,13 +119,9 @@ export type SessionDuration = (typeof SESSION_DURATIONS)[number];
 // the /nex-games/ endpoint is available in backend/routers/nex_games.py.
 
 export type NexGameCategory =
-  | 'Action'
-  | 'Sports'
+  | GameCategory
   | 'Dance'
-  | 'Adventure'
-  | 'Kids'
-  | 'Multiplayer'
-  | 'Other';
+  | 'Multiplayer';
 
 /** Lightweight item returned by the Nex games list endpoint. */
 export interface NexGameListItem {

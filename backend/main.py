@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import inspect as sa_inspect, text
 from database import engine, Base, settings
-from routers import games, headsets, sessions, admin, feedback
+from routers import games, headsets, sessions, admin, feedback, nex_games
 
 
 # ---------------------------------------------------------------------------
@@ -66,6 +66,7 @@ app.add_middleware(
 # Routers
 # ---------------------------------------------------------------------------
 app.include_router(games.router)
+app.include_router(nex_games.router)
 app.include_router(headsets.router)
 app.include_router(sessions.router)
 app.include_router(admin.router)
