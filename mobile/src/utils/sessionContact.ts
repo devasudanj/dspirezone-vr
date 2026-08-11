@@ -1,3 +1,5 @@
+import { DEFAULT_DISCOUNT_CODE, addGst, applyDiscountToAmount } from './pricing';
+
 export interface SessionContactPayloadInput {
   name: string;
   phone: string;
@@ -7,6 +9,10 @@ export interface SessionContactPayloadInput {
   source?: string;
   sessionStartedAt?: Date;
   vrSessionId?: string | null;
+  originalGamePrice?: number | null;
+  discountCode?: string | null;
+  discountPct?: number | null;
+  finalPriceInclGst?: number | null;
 }
 
 export interface SessionContactPayload {
@@ -18,6 +24,10 @@ export interface SessionContactPayload {
   vr_session_id?: string;
   station_name?: string | null;
   source: string;
+  original_game_price?: number | null;
+  discount_code?: string | null;
+  discount_pct?: number | null;
+  final_price_incl_gst?: number | null;
 }
 
 export function buildSessionContactPayload({
@@ -29,9 +39,19 @@ export function buildSessionContactPayload({
   source = 'vr-app',
   sessionStartedAt = new Date(),
   vrSessionId,
+  originalGamePrice,
+  discountCode,
+  discountPct,
+  finalPriceInclGst,
 }: SessionContactPayloadInput): SessionContactPayload {
   const cleanName = name.trim();
   const cleanPhone = phone.replace(/\D/g, '');
+  const resolvedOriginalPrice = typeof originalGamePrice === 'number' ? originalGamePrice : 250;
+  const resolvedDiscountCode = (discountCode ?? '').trim() || DEFAULT_DISCOUNT_CODE;
+  const resolvedDiscountPct = typeof discountPct === 'number' ? discountPct : 15;
+  const resolvedFinalPrice = typeof finalPriceInclGst === 'number'
+    ? finalPriceInclGst
+    : addGst(applyDiscountToAmount(resolvedOriginalPrice, resolvedDiscountPct));
 
   return {
     name: cleanName,
@@ -42,5 +62,9 @@ export function buildSessionContactPayload({
     vr_session_id: vrSessionId ?? `VR-${Date.now()}`,
     station_name: stationName ?? null,
     source,
+    original_game_price: resolvedOriginalPrice,
+    discount_code: resolvedDiscountCode,
+    discount_pct: resolvedDiscountPct,
+    final_price_incl_gst: resolvedFinalPrice,
   };
 }

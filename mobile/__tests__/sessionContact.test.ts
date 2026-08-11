@@ -19,6 +19,10 @@ describe('buildSessionContactPayload', () => {
       selected_game_id: 1,
       station_name: 'TV1',
       source: 'vr-app',
+      original_game_price: 250,
+      discount_code: 'DZVR-INTRO',
+      discount_pct: 15,
+      final_price_incl_gst: 250.75,
     });
     expect(payload.vr_session_id).toMatch(/^VR-/);
     expect(payload.session_started_at).toContain('T');

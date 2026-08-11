@@ -6,6 +6,7 @@
  */
 import { create } from 'zustand';
 import type { NexGame, NexSession, SessionDuration } from '../types';
+import { DEFAULT_DISCOUNT_CODE } from '../utils/pricing';
 
 interface PlayerContact {
   name: string;
@@ -21,6 +22,8 @@ interface NexSessionFlow {
   selectedDuration: SessionDuration | null;
   /** Step 3b – contact info captured before booking */
   playerContact: PlayerContact | null;
+  discountCode: string;
+  discountPercent: number;
   /** Step 4 – confirmed server-side session */
   confirmedSession: NexSession | null;
 
@@ -29,6 +32,7 @@ interface NexSessionFlow {
   setSelectedPlayers: (count: number) => void;
   setSelectedDuration: (duration: SessionDuration) => void;
   setPlayerContact: (contact: PlayerContact) => void;
+  setDiscountCode: (code: string, percent: number) => void;
   setConfirmedSession: (session: NexSession) => void;
   /** Reset to initial state – call after session is complete or cancelled. */
   resetFlow: () => void;
@@ -39,6 +43,8 @@ const initialState = {
   selectedPlayers: 1,
   selectedDuration: null,
   playerContact: null,
+  discountCode: DEFAULT_DISCOUNT_CODE,
+  discountPercent: 15,
   confirmedSession: null,
 };
 
@@ -53,6 +59,8 @@ export const useNexSessionStore = create<NexSessionFlow>((set) => ({
   setSelectedDuration: (duration) => set({ selectedDuration: duration }),
 
   setPlayerContact: (contact) => set({ playerContact: contact }),
+
+  setDiscountCode: (code, percent) => set({ discountCode: code, discountPercent: percent }),
 
   setConfirmedSession: (session) => set({ confirmedSession: session }),
 

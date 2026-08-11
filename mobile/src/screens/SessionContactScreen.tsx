@@ -24,7 +24,14 @@ import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
 import { buildSessionContactPayload } from '../utils/sessionContact';
-import { DEFAULT_DISCOUNT_CODE, getDiscountForCode, type ActiveDiscountCode } from '../utils/pricing';
+import {
+  DEFAULT_DISCOUNT_CODE,
+  getDiscountForCode,
+  applyDiscountToAmount,
+  addGst,
+  getBase15MinutePrice,
+  type ActiveDiscountCode,
+} from '../utils/pricing';
 import type { SessionContactProps } from '../navigation/types';
 
 const SESSION_CONTACT_URL = 'https://dspirezone-app-dev.azurewebsites.net/api/vr/session-contacts';
@@ -108,12 +115,18 @@ export default function SessionContactScreen({ navigation, route }: SessionConta
 
     setSubmitting(true);
     try {
+      const originalGamePrice = getBase15MinutePrice(selectedGame);
+      const finalPriceInclGst = addGst(applyDiscountToAmount(originalGamePrice, Number(activeDiscount.discount_pct ?? 0)));
       const payload = buildSessionContactPayload({
         name,
         phone,
         selectedGameName: selectedGame.name,
         selectedGameId: selectedGame.id,
         stationName: 'TV1',
+        originalGamePrice,
+        discountCode: activeDiscount.code,
+        discountPct: Number(activeDiscount.discount_pct ?? 0),
+        finalPriceInclGst,
       });
 
       await axios.post(SESSION_CONTACT_URL, payload, {

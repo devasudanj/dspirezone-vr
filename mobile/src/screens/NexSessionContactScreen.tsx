@@ -24,7 +24,14 @@ import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useNexSessionStore } from '../store/nexSessionStore';
 import { buildSessionContactPayload } from '../utils/sessionContact';
-import { DEFAULT_DISCOUNT_CODE, getDiscountForCode, type ActiveDiscountCode } from '../utils/pricing';
+import {
+  DEFAULT_DISCOUNT_CODE,
+  getDiscountForCode,
+  applyDiscountToAmount,
+  addGst,
+  getBase15MinutePrice,
+  type ActiveDiscountCode,
+} from '../utils/pricing';
 import type { NexSessionContactProps } from '../navigation/types';
 
 const SESSION_CONTACT_URL = 'https://dspirezone-app-dev.azurewebsites.net/api/vr/session-contacts';
@@ -108,6 +115,8 @@ export default function NexSessionContactScreen({ navigation, route }: NexSessio
 
     setSubmitting(true);
     try {
+      const originalGamePrice = getBase15MinutePrice(selectedGame as any);
+      const finalPriceInclGst = addGst(applyDiscountToAmount(originalGamePrice, Number(activeDiscount.discount_pct ?? 0)));
       const payload = buildSessionContactPayload({
         name,
         phone,
@@ -115,6 +124,10 @@ export default function NexSessionContactScreen({ navigation, route }: NexSessio
         selectedGameId: selectedGame.id,
         stationName: 'NEX-01',
         source: 'nex-playground',
+        originalGamePrice,
+        discountCode: activeDiscount.code,
+        discountPct: Number(activeDiscount.discount_pct ?? 0),
+        finalPriceInclGst,
       });
 
       await axios.post(SESSION_CONTACT_URL, payload, {
