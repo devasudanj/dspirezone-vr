@@ -30,6 +30,7 @@ import {
   getBase15MinutePrice,
   getBasePriceForDuration,
   getDiscountedPriceForDuration,
+  getFinalPriceWithGst,
   INTRO_OFFER_DISCOUNT_PERCENT,
 } from '../utils/pricing';
 import { SESSION_DURATIONS, type SessionDuration, type Installation } from '../types';
@@ -77,6 +78,8 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
       .join(', ');
     const basePrice = getBasePriceForDuration(price15Minutes, selectedDuration);
     const discountedPrice = getDiscountedPriceForDuration(price15Minutes, selectedDuration);
+    const finalPriceInclGst = getFinalPriceWithGst(price15Minutes, selectedDuration);
+    const gstAmount = finalPriceInclGst - discountedPrice;
     const sessionInfoCreatedAt = new Date();
     const createdDate = sessionInfoCreatedAt.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -96,7 +99,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
 
     Alert.alert(
       'Confirm Session',
-      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nDiscount: ${INTRO_OFFER_DISCOUNT_PERCENT}% OFF\nFinal Price: ${formatRs(discountedPrice)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
+      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nDiscount: ${INTRO_OFFER_DISCOUNT_PERCENT}% OFF\nGST (18%): ${formatRs(gstAmount)}\nFinal Price incl GST: ${formatRs(finalPriceInclGst)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -113,7 +116,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 ...session,
                 pricing_category: selectedGame?.pricing_category ?? null,
                 price_15_minutes: price15Minutes,
-                total_price: getDiscountedPriceForDuration(price15Minutes, selectedDuration),
+                total_price: getFinalPriceWithGst(price15Minutes, selectedDuration),
                 discount_percent: 15,
               }, playerContact ?? undefined);
               await printSessionSlip(html);
@@ -121,7 +124,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 ...session,
                 pricing_category: selectedGame?.pricing_category ?? null,
                 price_15_minutes: price15Minutes,
-                total_price: getDiscountedPriceForDuration(price15Minutes, selectedDuration),
+                total_price: getFinalPriceWithGst(price15Minutes, selectedDuration),
                 discount_percent: 15,
               });
               navigation.navigate('SessionSummary', { sessionId: session.id });

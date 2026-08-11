@@ -11,10 +11,13 @@
  */
 import type { Session } from '../types';
 import {
+  addGst,
   formatRs,
-  getSessionDisplayPrice,
+  getAmountBeforeGst,
+  getDiscountedPriceForDuration,
   getSessionOriginalPrice,
   INTRO_OFFER_DISCOUNT_PERCENT,
+  GST_PERCENT,
 } from './pricing';
 
 export function buildSessionSlipHtml(
@@ -42,9 +45,18 @@ export function buildSessionSlipHtml(
   const headsetLabel = session.headset_codes.length > 0
     ? session.headset_codes.join(', ')
     : 'N/A';
-  const displayPrice = getSessionDisplayPrice(session);
   const originalPrice = getSessionOriginalPrice(session);
   const discountPercent = session.discount_percent ?? INTRO_OFFER_DISCOUNT_PERCENT;
+  const discountedSubtotal = typeof session.total_price === 'number'
+    ? getAmountBeforeGst(session.total_price)
+    : (
+        typeof session.price_15_minutes === 'number' && (session.duration_minutes === 15 || session.duration_minutes === 30)
+          ? getDiscountedPriceForDuration(session.price_15_minutes, session.duration_minutes as 15 | 30)
+          : null
+      );
+  const taxableAmount = discountedSubtotal ?? originalPrice;
+  const gstAmount = taxableAmount !== null ? addGst(taxableAmount) - taxableAmount : null;
+  const finalAmount = taxableAmount !== null ? addGst(taxableAmount) : null;
   const contactName = playerContact?.name ? escapeHtml(playerContact.name) : 'Guest';
   const normalizedPhone = playerContact?.phone ? playerContact.phone.replace(/\D/g, '') : '';
   const contactPhone = normalizedPhone ? escapeHtml(normalizedPhone) : 'N/A';
@@ -208,14 +220,22 @@ export function buildSessionSlipHtml(
     <span class="label">Pricing Category</span>
     <span class="value">${escapeHtml(session.pricing_category)}</span>
   </div>` : ''}
-  ${displayPrice !== null ? `
+  ${taxableAmount !== null ? `
   <div class="row">
     <span class="label">Price</span>
     <span class="value">
-      ${originalPrice !== null && originalPrice > displayPrice ? `<span class="value strike">${escapeHtml(`${formatRs(originalPrice)} per person`)}</span>` : ''}
-      <span class="value accent">${escapeHtml(`${formatRs(displayPrice)} per person`)}</span>
-      ${originalPrice !== null && originalPrice > displayPrice ? `<span class="offer">${escapeHtml(`${discountPercent}% OFF`)}</span>` : ''}
+      ${originalPrice !== null && originalPrice > taxableAmount ? `<span class="value strike">${escapeHtml(`${formatRs(originalPrice)} per person`)}</span>` : ''}
+      <span class="value accent">${escapeHtml(`${formatRs(taxableAmount)} per person`)}</span>
+      ${originalPrice !== null && originalPrice > taxableAmount ? `<span class="offer">${escapeHtml(`${discountPercent}% OFF`)}</span>` : ''}
     </span>
+  </div>
+  <div class="row">
+    <span class="label">GST (${GST_PERCENT}%)</span>
+    <span class="value">${escapeHtml(formatRs(gstAmount ?? 0))}</span>
+  </div>
+  <div class="row">
+    <span class="label">Total incl GST</span>
+    <span class="value accent">${escapeHtml(formatRs(finalAmount ?? 0))}</span>
   </div>` : ''}
   <div class="row">
     <span class="label">Date</span>

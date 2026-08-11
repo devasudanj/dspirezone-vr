@@ -21,7 +21,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchSession } from '../api/sessions';
 import { buildSessionSlipHtml } from '../utils/sessionSlip';
 import { printSessionSlip, shareSessionSlip } from '../utils/print';
-import { formatRs, getSessionDisplayPrice, getSessionOriginalPrice, INTRO_OFFER_DISCOUNT_PERCENT } from '../utils/pricing';
+import {
+  addGst,
+  formatRs,
+  getAmountBeforeGst,
+  getDiscountedPriceForDuration,
+  getSessionOriginalPrice,
+  GST_PERCENT,
+  INTRO_OFFER_DISCOUNT_PERCENT,
+} from '../utils/pricing';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
@@ -111,9 +119,18 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
     second: '2-digit',
     timeZone: 'Asia/Kolkata',
   });
-  const displayPrice = getSessionDisplayPrice(session);
   const originalPrice = getSessionOriginalPrice(session);
   const discountPercent = session.discount_percent ?? INTRO_OFFER_DISCOUNT_PERCENT;
+  const discountedSubtotal = typeof session.total_price === 'number'
+    ? getAmountBeforeGst(session.total_price)
+    : (
+        typeof session.price_15_minutes === 'number' && (session.duration_minutes === 15 || session.duration_minutes === 30)
+          ? getDiscountedPriceForDuration(session.price_15_minutes, session.duration_minutes as 15 | 30)
+          : null
+      );
+  const taxableAmount = discountedSubtotal ?? originalPrice;
+  const gstAmount = taxableAmount !== null ? addGst(taxableAmount) - taxableAmount : null;
+  const finalPrice = taxableAmount !== null ? addGst(taxableAmount) : null;
 
   return (
     <View style={styles.container}>
@@ -145,17 +162,19 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
           />
           <SlipRow label="Duration" value={`${session.duration_minutes} minutes`} />
           {session.pricing_category && <SlipRow label="Pricing Category" value={session.pricing_category} />}
-          {displayPrice !== null && (
+          {taxableAmount !== null && finalPrice !== null && gstAmount !== null && (
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Price</Text>
               <View style={styles.priceValueWrap}>
-                {originalPrice !== null && originalPrice > displayPrice && (
+                {originalPrice !== null && originalPrice > taxableAmount && (
                   <Text style={styles.priceOriginal}>{formatRs(originalPrice)} per person</Text>
                 )}
-                <Text style={styles.priceDiscounted}>{formatRs(displayPrice)} per person</Text>
-                {originalPrice !== null && originalPrice > displayPrice && (
+                <Text style={styles.priceDiscounted}>{formatRs(taxableAmount)} per person</Text>
+                {originalPrice !== null && originalPrice > taxableAmount && (
                   <Text style={styles.priceDiscountTag}>{discountPercent}% OFF</Text>
                 )}
+                <Text style={styles.priceDiscountTag}>GST ({GST_PERCENT}%): {formatRs(gstAmount)}</Text>
+                <Text style={styles.priceDiscounted}>Total incl GST: {formatRs(finalPrice)}</Text>
               </View>
             </View>
           )}

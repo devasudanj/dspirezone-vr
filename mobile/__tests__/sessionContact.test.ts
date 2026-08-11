@@ -57,5 +57,7 @@ describe('buildSessionSlipHtml', () => {
     expect(html).toContain('John Doe');
     expect(html).toContain('9876543210');
     expect(html).toContain('Phone');
+    expect(html).toContain('GST');
+    expect(html).toContain('18%');
   });
 });

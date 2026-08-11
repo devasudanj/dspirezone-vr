@@ -1,6 +1,7 @@
 import type { Game, Session, SessionDuration } from '../types';
 
 export const INTRO_OFFER_DISCOUNT_PERCENT = 15;
+export const GST_PERCENT = 18;
 
 const DEFAULT_PRICE_15_MINUTES = 250;
 
@@ -19,11 +20,26 @@ export function applyIntroDiscount(basePrice: number): number {
   return roundCurrency(basePrice * (1 - INTRO_OFFER_DISCOUNT_PERCENT / 100));
 }
 
+export function addGst(amount: number): number {
+  return roundCurrency(amount * (1 + GST_PERCENT / 100));
+}
+
+export function getAmountBeforeGst(amountWithGst: number): number {
+  return roundCurrency(amountWithGst / (1 + GST_PERCENT / 100));
+}
+
 export function getDiscountedPriceForDuration(
   price15Minutes: number,
   durationMinutes: SessionDuration,
 ): number {
   return applyIntroDiscount(getBasePriceForDuration(price15Minutes, durationMinutes));
+}
+
+export function getFinalPriceWithGst(
+  price15Minutes: number,
+  durationMinutes: SessionDuration,
+): number {
+  return addGst(getDiscountedPriceForDuration(price15Minutes, durationMinutes));
 }
 
 export function formatRs(price: number): string {
@@ -32,10 +48,10 @@ export function formatRs(price: number): string {
 
 export function getSessionDisplayPrice(session: Pick<Session, 'total_price' | 'price_15_minutes' | 'duration_minutes'>): number | null {
   if (typeof session.total_price === 'number') {
-    return roundCurrency(session.total_price);
+    return addGst(getAmountBeforeGst(session.total_price));
   }
   if (typeof session.price_15_minutes === 'number' && (session.duration_minutes === 15 || session.duration_minutes === 30)) {
-    return getDiscountedPriceForDuration(session.price_15_minutes, session.duration_minutes as SessionDuration);
+    return getFinalPriceWithGst(session.price_15_minutes, session.duration_minutes as SessionDuration);
   }
   return null;
 }
