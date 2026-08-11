@@ -20,12 +20,14 @@ export type GamesStackParamList = {
   GameLibrary: undefined;
   GameDetail: { gameId: number };
   HeadsetSelection: { gameId: number };
+  SessionContact: { gameId: number };
   TimeSelection: { gameId: number };
   SessionSummary: { sessionId: number };
 
   // ── Nex Playground flow ──────────────────────────────────────────────────
   NexPlaygroundLibrary: undefined;
   NexPlaygroundDetail: { gameId: string };
+  NexSessionContact: { gameId: string };
   NexPlaygroundTimeSelection: { gameId: string };
   NexPlaygroundSessionSummary: { sessionId: string };
 };
@@ -43,6 +45,7 @@ export type RootStackParamList = GamesStackParamList;
 export type GameTypeSelectionProps = NativeStackScreenProps<GamesStackParamList, 'GameTypeSelection'>;
 export type GameLibraryProps = NativeStackScreenProps<GamesStackParamList, 'GameLibrary'>;
 export type GameDetailProps = NativeStackScreenProps<GamesStackParamList, 'GameDetail'>;
+export type SessionContactProps = NativeStackScreenProps<GamesStackParamList, 'SessionContact'>;
 export type TimeSelectionProps = NativeStackScreenProps<GamesStackParamList, 'TimeSelection'>;
 export type SessionSummaryProps = NativeStackScreenProps<GamesStackParamList, 'SessionSummary'>;
 export type FeedbackTabProps = BottomTabScreenProps<RootTabParamList, 'Feedback'>;
@@ -52,5 +55,6 @@ export type HeadsetSelectionProps = NativeStackScreenProps<GamesStackParamList, 
 // Nex Playground screen prop types
 export type NexPlaygroundLibraryProps = NativeStackScreenProps<GamesStackParamList, 'NexPlaygroundLibrary'>;
 export type NexPlaygroundDetailProps = NativeStackScreenProps<GamesStackParamList, 'NexPlaygroundDetail'>;
+export type NexSessionContactProps = NativeStackScreenProps<GamesStackParamList, 'NexSessionContact'>;
 export type NexPlaygroundTimeSelectionProps = NativeStackScreenProps<GamesStackParamList, 'NexPlaygroundTimeSelection'>;
 export type NexPlaygroundSessionSummaryProps = NativeStackScreenProps<GamesStackParamList, 'NexPlaygroundSessionSummary'>;

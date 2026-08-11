@@ -25,7 +25,10 @@ import { trackNexSessionConfirmed } from '../utils/analytics';
 import type { NexSession } from '../types';
 import type { NexPlaygroundSessionSummaryProps } from '../navigation/types';
 
-function buildNexSlipHtml(session: NexSession): string {
+function buildNexSlipHtml(
+  session: NexSession,
+  playerContact?: { name: string; phone: string } | null,
+): string {
   const createdAt = new Date(session.created_at);
   const dateStr = createdAt.toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -33,6 +36,9 @@ function buildNexSlipHtml(session: NexSession): string {
   const timeStr = createdAt.toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit',
   });
+  const contactName = playerContact?.name ? playerContact.name : 'Guest';
+  const normalizedPhone = playerContact?.phone ? playerContact.phone.replace(/\D/g, '') : '';
+  const contactPhone = normalizedPhone || 'N/A';
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Nex Session Slip</title>
@@ -54,6 +60,8 @@ function buildNexSlipHtml(session: NexSession): string {
 <hr/>
 <div class="row highlight"><span class="label">Session ID</span><span class="value">${session.session_code}</span></div>
 <div class="row"><span class="label">Game</span><span class="value">${session.game_name}</span></div>
+<div class="row"><span class="label">Name</span><span class="value">${contactName}</span></div>
+<div class="row"><span class="label">Phone</span><span class="value">${contactPhone}</span></div>
 <div class="row highlight"><span class="label">Players</span><span class="value">${session.players}</span></div>
 <div class="row highlight"><span class="label">Stations</span><span class="value">${session.station_codes.join(', ') || 'N/A'}</span></div>
 <div class="row"><span class="label">Duration</span><span class="value">${session.duration_minutes} minutes</span></div>
@@ -75,6 +83,7 @@ export default function NexPlaygroundSessionSummaryScreen({
 }: NexPlaygroundSessionSummaryProps) {
   const { sessionId } = route.params;
   const confirmedSession = useNexSessionStore((s) => s.confirmedSession);
+  const playerContact = useNexSessionStore((s) => s.playerContact);
   const resetFlow = useNexSessionStore((s) => s.resetFlow);
 
   const [session, setSession] = useState<NexSession | null>(confirmedSession);
@@ -94,7 +103,7 @@ export default function NexPlaygroundSessionSummaryScreen({
     if (!session) return;
     setPrinting(true);
     try {
-      const html = buildNexSlipHtml(session);
+      const html = buildNexSlipHtml(session, playerContact ?? undefined);
       await printSessionSlip(html);
     } catch (e: any) {
       Alert.alert('Print Error', e.message ?? 'Could not send to printer');
@@ -107,7 +116,7 @@ export default function NexPlaygroundSessionSummaryScreen({
     if (!session) return;
     setPrinting(true);
     try {
-      const html = buildNexSlipHtml(session);
+      const html = buildNexSlipHtml(session, playerContact ?? undefined);
       await shareSessionSlip(html, session.session_code);
     } catch (e: any) {
       Alert.alert('Share Error', e.message ?? 'Could not share the slip');
@@ -164,6 +173,8 @@ export default function NexPlaygroundSessionSummaryScreen({
           <View style={styles.divider} />
           <SlipRow label="Session ID" value={session.session_code} highlight />
           <SlipRow label="Game" value={session.game_name} />
+          <SlipRow label="Name" value={playerContact?.name ?? 'Guest'} />
+          <SlipRow label="Phone" value={playerContact?.phone ?? 'N/A'} />
           <SlipRow label="Players" value={String(session.players)} highlight />
           <SlipRow
             label="Stations"

@@ -31,6 +31,7 @@ import type { SessionSummaryProps } from '../navigation/types';
 export default function SessionSummaryScreen({ route, navigation }: SessionSummaryProps) {
   const { sessionId } = route.params;
   const confirmedSession = useSessionStore((s) => s.confirmedSession);
+  const playerContact = useSessionStore((s) => s.playerContact);
   const resetFlow = useSessionStore((s) => s.resetFlow);
 
   const [session, setSession] = useState<Session | null>(confirmedSession);
@@ -56,7 +57,7 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
     if (!session) return;
     setPrinting(true);
     try {
-      const html = buildSessionSlipHtml(session);
+      const html = buildSessionSlipHtml(session, playerContact ?? undefined);
       await printSessionSlip(html);
     } catch (e: any) {
       Alert.alert('Print Error', e.message ?? 'Could not send to printer');
@@ -69,7 +70,7 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
     if (!session) return;
     setPrinting(true);
     try {
-      const html = buildSessionSlipHtml(session);
+      const html = buildSessionSlipHtml(session, playerContact ?? undefined);
       await shareSessionSlip(html, session.session_code);
     } catch (e: any) {
       Alert.alert('Share Error', e.message ?? 'Could not share the slip');
@@ -135,6 +136,8 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
 
           <SlipRow label="Session ID" value={session.session_code} highlight />
           <SlipRow label="Game" value={session.game_name} />
+          <SlipRow label="Name" value={playerContact?.name ?? 'Guest'} />
+          <SlipRow label="Phone" value={playerContact?.phone ?? 'N/A'} />
           <SlipRow
             label="Available Headsets"
             value={session.headset_codes.length > 0 ? session.headset_codes.join(', ') : 'N/A'}

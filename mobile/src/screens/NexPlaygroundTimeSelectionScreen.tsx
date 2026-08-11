@@ -40,6 +40,7 @@ export default function NexPlaygroundTimeSelectionScreen({
   const { gameId } = route.params;
 
   const selectedGame = useNexSessionStore((s) => s.selectedGame);
+  const playerContact = useNexSessionStore((s) => s.playerContact);
   const setSelectedDuration = useNexSessionStore((s) => s.setSelectedDuration);
   const setSelectedPlayers = useNexSessionStore((s) => s.setSelectedPlayers);
   const setConfirmedSession = useNexSessionStore((s) => s.setConfirmedSession);

@@ -26,12 +26,14 @@ import FeedbackScreen from '../screens/FeedbackScreen';
 // VR flow screens
 import GameLibraryScreen from '../screens/GameLibraryScreen';
 import GameDetailScreen from '../screens/GameDetailScreen';
+import SessionContactScreen from '../screens/SessionContactScreen';
 import TimeSelectionScreen from '../screens/TimeSelectionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
 
 // Nex Playground flow screens
 import NexPlaygroundLibraryScreen from '../screens/NexPlaygroundLibraryScreen';
 import NexPlaygroundDetailScreen from '../screens/NexPlaygroundDetailScreen';
+import NexSessionContactScreen from '../screens/NexSessionContactScreen';
 import NexPlaygroundTimeSelectionScreen from '../screens/NexPlaygroundTimeSelectionScreen';
 import NexPlaygroundSessionSummaryScreen from '../screens/NexPlaygroundSessionSummaryScreen';
 
@@ -69,6 +71,11 @@ function GamesNavigator() {
         options={{ title: 'Game Details' }}
       />
       <GamesStack.Screen
+        name="SessionContact"
+        component={SessionContactScreen}
+        options={{ title: 'Your Details' }}
+      />
+      <GamesStack.Screen
         name="TimeSelection"
         component={TimeSelectionScreen}
         options={{ title: 'Select Duration' }}
@@ -89,6 +96,11 @@ function GamesNavigator() {
         name="NexPlaygroundDetail"
         component={NexPlaygroundDetailScreen}
         options={{ title: 'Game Details' }}
+      />
+      <GamesStack.Screen
+        name="NexSessionContact"
+        component={NexSessionContactScreen}
+        options={{ title: 'Your Details' }}
       />
       <GamesStack.Screen
         name="NexPlaygroundTimeSelection"

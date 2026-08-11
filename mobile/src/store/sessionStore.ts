@@ -7,6 +7,11 @@
 import { create } from 'zustand';
 import type { Game, Session, SessionDuration } from '../types';
 
+interface PlayerContact {
+  name: string;
+  phone: string;
+}
+
 interface SessionFlow {
   /** Step 1 – game selected from library */
   selectedGame: Game | null;
@@ -14,6 +19,8 @@ interface SessionFlow {
   selectedInstallation: null;
   /** Step 2 – duration chosen by player */
   selectedDuration: SessionDuration | null;
+  /** Step 2b – contact info captured before booking */
+  playerContact: PlayerContact | null;
   /** Step 3 – confirmed server-side session */
   confirmedSession: Session | null;
 
@@ -21,6 +28,7 @@ interface SessionFlow {
   setSelectedGame: (game: Game) => void;
   setSelectedInstallation: (installation: unknown) => void;
   setSelectedDuration: (duration: SessionDuration) => void;
+  setPlayerContact: (contact: PlayerContact) => void;
   setConfirmedSession: (session: Session) => void;
   /** Reset to initial state – call after slip is printed or session is cancelled. */
   resetFlow: () => void;
@@ -30,6 +38,7 @@ const initialState = {
   selectedGame: null,
   selectedInstallation: null,
   selectedDuration: null,
+  playerContact: null,
   confirmedSession: null,
 };
 
@@ -45,6 +54,8 @@ export const useSessionStore = create<SessionFlow>((set) => ({
   },
 
   setSelectedDuration: (duration) => set({ selectedDuration: duration }),
+
+  setPlayerContact: (contact) => set({ playerContact: contact }),
 
   setConfirmedSession: (session) => set({ confirmedSession: session }),
 

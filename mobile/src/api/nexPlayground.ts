@@ -31,6 +31,11 @@ interface NexApiGame {
   station_id?: number;
   category?: string;
   thumbnail_url?: string;
+  thumbnail_image_url?: string;
+  image_url?: string;
+  youtube_url?: string | null;
+  video_url?: string | null;
+  trailer_url?: string | null;
 }
 
 interface NexApiListResponse {
@@ -164,6 +169,45 @@ function normalizeNexCategory(category?: string): NexGameCategory {
   return match ?? 'Other';
 }
 
+function pickNonEmptyString(...values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim().length > 0) return value.trim();
+  }
+  return null;
+}
+
+function extractYoutubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)?([\w-]{11})(?:[?&]|$)/,
+  );
+  return match ? match[1] : null;
+}
+
+function isLikelyImageUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (lower.includes('img.youtube.com') || lower.includes('i.ytimg.com')) return true;
+  return /\.(png|jpe?g|webp|gif|bmp|svg)(\?|#|$)/.test(lower);
+}
+
+function resolveTrailerUrl(item: NexApiGame): string | null {
+  return pickNonEmptyString(item.trailer_url, item.video_url, item.youtube_url);
+}
+
+function resolveThumbnailUrl(item: NexApiGame): string {
+  const thumbnail = pickNonEmptyString(item.thumbnail_image_url, item.thumbnail_url, item.image_url);
+  const trailerUrl = resolveTrailerUrl(item);
+
+  if (thumbnail && isLikelyImageUrl(thumbnail)) return thumbnail;
+
+  if (trailerUrl) {
+    const youtubeId = extractYoutubeId(trailerUrl);
+    if (youtubeId) return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+  }
+
+  if (thumbnail) return thumbnail;
+  return 'https://via.placeholder.com/600x340';
+}
+
 function mapGameListItemToNex(item: GameListItem): NexGameListItem {
   return {
     id: String(item.id),
@@ -194,19 +238,20 @@ function mapNexApiGameListItem(item: NexApiGame): NexGameListItem {
     id: String(item.id),
     name: item.name,
     category: normalizeNexCategory(item.category),
-    thumbnail_url: item.thumbnail_url ?? 'https://via.placeholder.com/300x180',
+    thumbnail_url: resolveThumbnailUrl(item),
     status: normalizeNexStatus(item.status),
   };
 }
 
 function mapNexApiGameDetail(item: NexApiGame): NexGame {
+  const trailerUrl = resolveTrailerUrl(item);
   return {
     id: String(item.id),
     name: item.name,
     description: item.description ?? '',
     category: normalizeNexCategory(item.category),
-    thumbnail_url: item.thumbnail_url ?? 'https://via.placeholder.com/600x340',
-    trailer_url: null,
+    thumbnail_url: resolveThumbnailUrl(item),
+    trailer_url: typeof trailerUrl === 'string' && trailerUrl.trim().length > 0 ? trailerUrl : null,
     min_players: 1,
     max_players: 4,
     min_age: null,
@@ -251,12 +296,15 @@ export async function fetchNexGames(
       : [];
 
   return items.map((item) => {
-    if (item && typeof item === 'object' && 'station_id' in item) {
-      return mapNexApiGameListItem(item as NexApiGame);
-    }
     if (typeof item.id === 'string') {
       return item as NexGameListItem;
     }
+
+    // /api/nex-games returns numeric IDs; treat these as Nex payloads first.
+    if (typeof item.id === 'number') {
+      return mapNexApiGameListItem(item as NexApiGame);
+    }
+
     return mapGameListItemToNex(item as GameListItem);
   });
 }
@@ -266,7 +314,7 @@ export async function fetchNexGame(gameId: string): Promise<NexGame> {
   const parsedId = parseGameId(gameId);
   try {
     const { data } = await client.get<NexGame | Game | NexApiGame>(`/api/nex-games/${parsedId}`);
-    if (data && typeof data === 'object' && 'station_id' in data) {
+    if (typeof data.id === 'number') {
       return mapNexApiGameDetail(data as NexApiGame);
     }
     if (typeof data.id === 'string') {

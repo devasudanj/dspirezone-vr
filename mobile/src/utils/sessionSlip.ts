@@ -17,7 +17,10 @@ import {
   INTRO_OFFER_DISCOUNT_PERCENT,
 } from './pricing';
 
-export function buildSessionSlipHtml(session: Session): string {
+export function buildSessionSlipHtml(
+  session: Session,
+  playerContact?: { name: string; phone: string } | null,
+): string {
   const createdAt = new Date(session.created_at);
 
   const dateStr = createdAt.toLocaleDateString('en-US', {
@@ -42,6 +45,9 @@ export function buildSessionSlipHtml(session: Session): string {
   const displayPrice = getSessionDisplayPrice(session);
   const originalPrice = getSessionOriginalPrice(session);
   const discountPercent = session.discount_percent ?? INTRO_OFFER_DISCOUNT_PERCENT;
+  const contactName = playerContact?.name ? escapeHtml(playerContact.name) : 'Guest';
+  const normalizedPhone = playerContact?.phone ? playerContact.phone.replace(/\D/g, '') : '';
+  const contactPhone = normalizedPhone ? escapeHtml(normalizedPhone) : 'N/A';
 
   return `
 <!DOCTYPE html>
@@ -180,6 +186,14 @@ export function buildSessionSlipHtml(session: Session): string {
   <div class="row">
     <span class="label">Game</span>
     <span class="value accent">${escapeHtml(session.game_name)}</span>
+  </div>
+  <div class="row">
+    <span class="label">Name</span>
+    <span class="value">${contactName}</span>
+  </div>
+  <div class="row">
+    <span class="label">Phone</span>
+    <span class="value">${contactPhone}</span>
   </div>
   <div class="row">
     <span class="label">Available Headsets</span>

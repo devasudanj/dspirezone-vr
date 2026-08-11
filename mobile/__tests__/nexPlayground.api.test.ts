@@ -77,6 +77,24 @@ describe('fetchNexGames', () => {
       params: { status: 'active', category: 'Multiplayer' },
     });
   });
+
+  it('uses YouTube preview when thumbnail_url is not a direct image', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: [
+        {
+          id: 3,
+          name: 'Party Fowl',
+          category: 'Multiplayer',
+          thumbnail_url: 'https://www.nex.inc/partyfowl',
+          youtube_url: 'https://www.youtube.com/watch?v=dNfACINSbOU',
+          status: 'active',
+        },
+      ],
+    });
+
+    const games = await fetchNexGames();
+    expect(games[0].thumbnail_url).toBe('https://img.youtube.com/vi/dNfACINSbOU/hqdefault.jpg');
+  });
 });
 
 describe('fetchNexGame', () => {
@@ -104,6 +122,24 @@ describe('fetchNexGame', () => {
     expect(game.name).toBe('Beat Saber');
     expect(typeof game.description).toBe('string');
     expect(game.description.length).toBeGreaterThan(0);
+  });
+
+  it('maps backend youtube_url to trailer_url for Nex detail', async () => {
+    mockedClient.get.mockResolvedValueOnce({
+      data: {
+        id: 12,
+        name: 'Batman: Arkham Shadow',
+        description: 'Nex experience',
+        category: 'Action',
+        thumbnail_url: 'https://example.com/nex-thumb.jpg',
+        youtube_url: 'https://www.youtube.com/watch?v=abc123xyz78',
+        status: 'ACTIVE',
+        station_id: 1,
+      },
+    });
+
+    const game = await fetchNexGame('12');
+    expect(game.trailer_url).toBe('https://www.youtube.com/watch?v=abc123xyz78');
   });
 
   it('throws for an unknown ID', async () => {

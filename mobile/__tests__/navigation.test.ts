@@ -14,10 +14,12 @@ type GamesScreenName =
   | 'GameLibrary'
   | 'GameDetail'
   | 'HeadsetSelection'
+  | 'SessionContact'
   | 'TimeSelection'
   | 'SessionSummary'
   | 'NexPlaygroundLibrary'
   | 'NexPlaygroundDetail'
+  | 'NexSessionContact'
   | 'NexPlaygroundTimeSelection'
   | 'NexPlaygroundSessionSummary';
 
@@ -33,6 +35,7 @@ describe('Navigation route names', () => {
   const NEX_SCREENS: GamesScreenName[] = [
     'NexPlaygroundLibrary',
     'NexPlaygroundDetail',
+    'NexSessionContact',
     'NexPlaygroundTimeSelection',
     'NexPlaygroundSessionSummary',
   ];
@@ -51,6 +54,7 @@ describe('Navigation route names', () => {
   it('has all Nex Playground flow screens', () => {
     expect(NEX_SCREENS).toContain('NexPlaygroundLibrary');
     expect(NEX_SCREENS).toContain('NexPlaygroundDetail');
+    expect(NEX_SCREENS).toContain('NexSessionContact');
     expect(NEX_SCREENS).toContain('NexPlaygroundTimeSelection');
     expect(NEX_SCREENS).toContain('NexPlaygroundSessionSummary');
   });

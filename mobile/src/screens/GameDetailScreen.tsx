@@ -82,7 +82,7 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
   const handleStartSession = () => {
     if (!game) return;
     setSelectedGame(game);
-    navigation.navigate('TimeSelection', { gameId: game.id });
+    navigation.navigate('SessionContact', { gameId: game.id });
   };
 
 

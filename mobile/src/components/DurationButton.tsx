@@ -48,21 +48,23 @@ export default function DurationButton({ minutes, selected, onPress, price15Minu
           selected && { backgroundColor: meta.color },
         ]}
       >
-        <Text style={[styles.label, selected && styles.labelSelected]}>
-          {meta.label}
-        </Text>
-        <Text style={[styles.sublabel, selected && styles.sublabelSelected]}>
-          {meta.sublabel}
-        </Text>
-        <Text style={[styles.originalPrice, selected && styles.originalPriceSelected]}>
-          {formatRs(basePrice)} per person
-        </Text>
-        <Text style={[styles.price, selected && styles.priceSelected]}>
-          {formatRs(discountedPrice)} per person
-        </Text>
-        <Text style={[styles.offerTag, selected && styles.offerTagSelected]}>
-          Intro Offer {INTRO_OFFER_DISCOUNT_PERCENT}% OFF
-        </Text>
+        <View style={styles.contentWrap}>
+          <Text style={[styles.label, selected && styles.labelSelected]}>
+            {meta.label}
+          </Text>
+          <Text style={[styles.sublabel, selected && styles.sublabelSelected]}>
+            {meta.sublabel}
+          </Text>
+          <Text style={[styles.originalPrice, selected && styles.originalPriceSelected]}>
+            {formatRs(basePrice)} per person
+          </Text>
+          <Text style={[styles.price, selected && styles.priceSelected]}>
+            {formatRs(discountedPrice)} per person
+          </Text>
+          <Text style={[styles.offerTag, selected && styles.offerTagSelected]}>
+            Intro Offer {INTRO_OFFER_DISCOUNT_PERCENT}% OFF
+          </Text>
+        </View>
         {selected && <View style={styles.selectedDot} />}
       </View>
     </TouchableOpacity>
@@ -72,14 +74,23 @@ export default function DurationButton({ minutes, selected, onPress, price15Minu
 const styles = StyleSheet.create({
   button: {
     width: 140,
-    height: 140,
+    minHeight: 150,
     borderRadius: 20,
     borderWidth: 3,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
     position: 'relative',
+  },
+  contentWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    gap: 3,
+    paddingTop: 6,
+    paddingBottom: 4,
   },
   label: {
     color: Colors.textPrimary,
@@ -104,6 +115,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.xs,
     textDecorationLine: 'line-through',
     marginTop: 2,
+    textAlign: 'center',
   },
   originalPriceSelected: {
     color: Colors.background,
@@ -114,6 +126,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.base,
     fontWeight: Typography.bold,
     marginTop: 1,
+    textAlign: 'center',
   },
   priceSelected: {
     color: Colors.background,
@@ -123,6 +136,8 @@ const styles = StyleSheet.create({
     fontSize: Typography.xs,
     fontWeight: Typography.bold,
     marginTop: 2,
+    textAlign: 'center',
+    paddingHorizontal: 2,
   },
   offerTagSelected: {
     color: Colors.background,

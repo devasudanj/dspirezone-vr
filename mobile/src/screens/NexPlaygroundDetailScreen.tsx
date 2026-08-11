@@ -17,17 +17,20 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import YoutubeIframe from 'react-native-youtube-iframe';
 
 import { fetchNexGame, recordNexGameVisit } from '../api/nexPlayground';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useNexSessionStore } from '../store/nexSessionStore';
 import { trackNexDetailViewed } from '../utils/analytics';
+import { getYouTubeVideoId } from '../utils/trailers';
 import type { NexGame } from '../types';
 import type { NexPlaygroundDetailProps } from '../navigation/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const LEFT_PANEL_WIDTH = Math.round(SCREEN_WIDTH * 0.52);
+const MEDIA_HEIGHT = 260;
 
 export default function NexPlaygroundDetailScreen({
   route,
@@ -61,7 +64,7 @@ export default function NexPlaygroundDetailScreen({
   const handleStartSession = () => {
     if (!game) return;
     setSelectedGame(game);
-    navigation.navigate('NexPlaygroundTimeSelection', { gameId: game.id });
+    navigation.navigate('NexSessionContact', { gameId: game.id });
   };
 
   if (loading) {
@@ -81,17 +84,60 @@ export default function NexPlaygroundDetailScreen({
   }
 
   const canStart = game.status === 'ACTIVE';
+  const trailerVideoId = getYouTubeVideoId(game.trailer_url);
 
   return (
     <View style={styles.container}>
       <View style={styles.body}>
-        {/* LEFT PANEL – thumbnail + description */}
+        {/* LEFT PANEL – trailer/thumbnail + description */}
         <View style={[styles.leftPanel, { width: LEFT_PANEL_WIDTH }]}>
-          <Image
-            source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/600x340' }}
-            style={styles.thumbnail}
-            contentFit="cover"
-          />
+          {trailerVideoId ? (
+            <View style={styles.videoWrapper}>
+              <YoutubeIframe
+                videoId={trailerVideoId}
+                height={MEDIA_HEIGHT}
+                width={LEFT_PANEL_WIDTH}
+                play={false}
+                allowWebViewZoom={false}
+                initialPlayerParams={{ modestbranding: 1, rel: 0, preventFullScreen: false }}
+                webViewProps={{
+                  injectedJavaScript: `
+                    (function() {
+                      var style = document.createElement('style');
+                      style.textContent = [
+                        '.ytp-youtube-button { display: none !important; }',
+                        '.ytp-watermark { display: none !important; }',
+                        '.ytp-chrome-top { display: none !important; }',
+                        '.ytp-chrome-top-buttons { display: none !important; }',
+                        '.ytp-share-button { display: none !important; }',
+                        '.ytp-overflow-button { display: none !important; }',
+                        'a[href*="youtube.com"] { pointer-events: none !important; cursor: default !important; }',
+                        'a[href*="youtu.be"] { pointer-events: none !important; cursor: default !important; }',
+                      ].join('');
+                      document.head.appendChild(style);
+                    })();
+                    true;
+                  `,
+                  mediaPlaybackRequiresUserAction: false,
+                  onShouldStartLoadWithRequest: (request: { url: string }) => {
+                    const url = request.url || '';
+                    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                      if (!url.includes('youtube.com/embed') && !url.includes('youtube-nocookie.com')) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  },
+                }}
+              />
+            </View>
+          ) : (
+            <Image
+              source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/600x340' }}
+              style={styles.thumbnail}
+              contentFit="cover"
+            />
+          )}
           <ScrollView style={styles.descScroll} contentContainerStyle={styles.descContent}>
             <Text style={styles.descTitle}>About</Text>
             <Text style={styles.descText}>{game.description}</Text>
@@ -145,6 +191,13 @@ export default function NexPlaygroundDetailScreen({
             </View>
           )}
 
+          {game.trailer_url && !trailerVideoId && (
+            <View style={styles.trailerButton} accessibilityRole="image">
+              <Ionicons name="logo-youtube" size={20} color={Colors.textOnPrimary} />
+              <Text style={styles.trailerButtonText}>Trailer unavailable</Text>
+            </View>
+          )}
+
           {/* CTA */}
           <TouchableOpacity
             style={[styles.ctaButton, !canStart && styles.ctaDisabled]}
@@ -193,7 +246,13 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: Colors.border,
   },
-  thumbnail: { width: '100%', height: 260 },
+  thumbnail: { width: '100%', height: MEDIA_HEIGHT },
+  videoWrapper: {
+    width: '100%',
+    height: MEDIA_HEIGHT,
+    backgroundColor: '#000',
+    overflow: 'hidden',
+  },
   descScroll: { flex: 1 },
   descContent: { padding: 20 },
   descTitle: {
@@ -275,6 +334,20 @@ const styles = StyleSheet.create({
     color: Colors.warning,
     fontWeight: Typography.semibold,
     fontSize: Typography.sm,
+  },
+  trailerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#d61f1f',
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  trailerButtonText: {
+    color: Colors.textOnPrimary,
+    fontSize: Typography.base,
+    fontWeight: Typography.bold,
   },
   ctaButton: {
     flexDirection: 'row',

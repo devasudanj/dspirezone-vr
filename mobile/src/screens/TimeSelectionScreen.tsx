@@ -23,6 +23,8 @@ import DurationButton from '../components/DurationButton';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
+import { buildSessionSlipHtml } from '../utils/sessionSlip';
+import { printSessionSlip } from '../utils/print';
 import {
   formatRs,
   getBase15MinutePrice,
@@ -42,6 +44,7 @@ function statusColor(status: Installation['installation_status']) {
 export default function TimeSelectionScreen({ route, navigation }: TimeSelectionProps) {
   const { gameId } = route.params;
   const selectedGame = useSessionStore((s) => s.selectedGame);
+  const playerContact = useSessionStore((s) => s.playerContact);
   const setSelectedDuration = useSessionStore((s) => s.setSelectedDuration);
   const setConfirmedSession = useSessionStore((s) => s.setConfirmedSession);
 
@@ -106,6 +109,14 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 game_id: gameId,
                 duration_minutes: selectedDuration,
               });
+              const html = buildSessionSlipHtml({
+                ...session,
+                pricing_category: selectedGame?.pricing_category ?? null,
+                price_15_minutes: price15Minutes,
+                total_price: getDiscountedPriceForDuration(price15Minutes, selectedDuration),
+                discount_percent: 15,
+              }, playerContact ?? undefined);
+              await printSessionSlip(html);
               setConfirmedSession({
                 ...session,
                 pricing_category: selectedGame?.pricing_category ?? null,

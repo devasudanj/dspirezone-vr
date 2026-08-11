@@ -7,6 +7,11 @@
 import { create } from 'zustand';
 import type { NexGame, NexSession, SessionDuration } from '../types';
 
+interface PlayerContact {
+  name: string;
+  phone: string;
+}
+
 interface NexSessionFlow {
   /** Step 1 – Nex game selected from library */
   selectedGame: NexGame | null;
@@ -14,6 +19,8 @@ interface NexSessionFlow {
   selectedPlayers: number;
   /** Step 3 – duration chosen by player */
   selectedDuration: SessionDuration | null;
+  /** Step 3b – contact info captured before booking */
+  playerContact: PlayerContact | null;
   /** Step 4 – confirmed server-side session */
   confirmedSession: NexSession | null;
 
@@ -21,6 +28,7 @@ interface NexSessionFlow {
   setSelectedGame: (game: NexGame) => void;
   setSelectedPlayers: (count: number) => void;
   setSelectedDuration: (duration: SessionDuration) => void;
+  setPlayerContact: (contact: PlayerContact) => void;
   setConfirmedSession: (session: NexSession) => void;
   /** Reset to initial state – call after session is complete or cancelled. */
   resetFlow: () => void;
@@ -30,6 +38,7 @@ const initialState = {
   selectedGame: null,
   selectedPlayers: 1,
   selectedDuration: null,
+  playerContact: null,
   confirmedSession: null,
 };
 
@@ -42,6 +51,8 @@ export const useNexSessionStore = create<NexSessionFlow>((set) => ({
   setSelectedPlayers: (count) => set({ selectedPlayers: count }),
 
   setSelectedDuration: (duration) => set({ selectedDuration: duration }),
+
+  setPlayerContact: (contact) => set({ playerContact: contact }),
 
   setConfirmedSession: (session) => set({ confirmedSession: session }),
 
