@@ -10,6 +10,7 @@ export interface SessionContactPayloadInput {
   sessionStartedAt?: Date;
   vrSessionId?: string | null;
   originalGamePrice?: number | null;
+  selectedSessionTime?: number | null;
   discountCode?: string | null;
   discountPct?: number | null;
   finalPriceInclGst?: number | null;
@@ -25,6 +26,7 @@ export interface SessionContactPayload {
   station_name?: string | null;
   source: string;
   original_game_price?: number | null;
+  selected_session_time?: string | null;
   discount_code?: string | null;
   discount_pct?: number | null;
   final_price_incl_gst?: number | null;
@@ -40,6 +42,7 @@ export function buildSessionContactPayload({
   sessionStartedAt = new Date(),
   vrSessionId,
   originalGamePrice,
+  selectedSessionTime,
   discountCode,
   discountPct,
   finalPriceInclGst,
@@ -63,6 +66,7 @@ export function buildSessionContactPayload({
     station_name: stationName ?? null,
     source,
     original_game_price: resolvedOriginalPrice,
+    selected_session_time: typeof selectedSessionTime === 'number' ? String(selectedSessionTime) : null,
     discount_code: resolvedDiscountCode,
     discount_pct: resolvedDiscountPct,
     final_price_incl_gst: resolvedFinalPrice,

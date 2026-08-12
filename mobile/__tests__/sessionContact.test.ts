@@ -1,6 +1,13 @@
 import { buildSessionContactPayload } from '../src/utils/sessionContact';
 import { buildSessionSlipHtml } from '../src/utils/sessionSlip';
-import { DEFAULT_DISCOUNT_CODE, getDiscountForCode } from '../src/utils/pricing';
+import {
+  DEFAULT_DISCOUNT_CODE,
+  getBase15MinutePrice,
+  getBasePriceForDuration,
+  getDiscountForCode,
+  getPriceAfterSelectedDiscount,
+  addGst,
+} from '../src/utils/pricing';
 
 describe('buildSessionContactPayload', () => {
   it('creates the required payload fields from a player and selected game', () => {
@@ -20,9 +27,10 @@ describe('buildSessionContactPayload', () => {
       station_name: 'TV1',
       source: 'vr-app',
       original_game_price: 250,
+      selected_session_time: null,
       discount_code: 'DZVR-INTRO',
       discount_pct: 15,
-      final_price_incl_gst: 250.75,
+      final_price_incl_gst: 251,
     });
     expect(payload.vr_session_id).toMatch(/^VR-/);
     expect(payload.session_started_at).toContain('T');
@@ -37,6 +45,25 @@ describe('buildSessionContactPayload', () => {
     });
 
     expect(payload.phone_number).toBe('919876543210');
+  });
+
+  it('uses the final 30-minute price in the contact payload', () => {
+    const payload = buildSessionContactPayload({
+      name: 'Jane Doe',
+      phone: '9876543210',
+      selectedGameName: 'NEX Fruit Frenzy',
+      selectedGameId: 2,
+      originalGamePrice: 500,
+      selectedSessionTime: 30,
+      discountCode: 'DZVR-INTRO',
+      discountPct: 15,
+      finalPriceInclGst: 503,
+    });
+
+    expect(payload.original_game_price).toBe(500);
+    expect(payload.selected_session_time).toBe('30');
+    expect(payload.discount_pct).toBe(15);
+    expect(payload.final_price_incl_gst).toBe(503);
   });
 });
 
@@ -68,6 +95,13 @@ describe('buildSessionSlipHtml', () => {
 });
 
 describe('discount validation', () => {
+  it('applies only the selected promotional percentage once', () => {
+    const discounted = getPriceAfterSelectedDiscount(250, 25);
+
+    expect(discounted).toBe(188);
+    expect(addGst(discounted)).toBe(222);
+  });
+
   it('accepts the default promotional code when it is active and current', () => {
     const activeCodes = [
       {
@@ -84,6 +118,17 @@ describe('discount validation', () => {
     expect(result).not.toBeNull();
     expect(result?.discount_pct).toBe(15);
     expect(DEFAULT_DISCOUNT_CODE).toBe('DZVR-INTRO');
+  });
+
+  it('uses the category price for Special VR games when the backend exposes it', () => {
+    const game = {
+      pricing_category: 'Special VR',
+      category_price: 400,
+      price_15_minutes: undefined,
+    } as any;
+
+    expect(getBase15MinutePrice(game)).toBe(400);
+    expect(getBasePriceForDuration(getBase15MinutePrice(game), 30)).toBe(800);
   });
 
   it('rejects expired discount codes', () => {

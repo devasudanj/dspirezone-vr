@@ -16,12 +16,14 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 
 import { createNexSession, fetchNexStations } from '../api/nexPlayground';
 import DurationButton from '../components/DurationButton';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useNexSessionStore } from '../store/nexSessionStore';
+import { buildSessionContactPayload } from '../utils/sessionContact';
 import { trackNexBookingInitiated } from '../utils/analytics';
 import {
   SESSION_DURATIONS,
@@ -31,6 +33,8 @@ import {
 import {
   addGst,
   applyDiscountToAmount,
+  getBasePriceForDuration,
+  getBase15MinutePrice,
   getDiscountedPriceForDuration,
 } from '../utils/pricing';
 import type { NexPlaygroundTimeSelectionProps } from '../navigation/types';
@@ -83,13 +87,13 @@ export default function NexPlaygroundTimeSelectionScreen({
     if (!selectedDuration) return;
 
     const stationList = stations.map((s) => s.code).join(', ');
-    const introPrice = getDiscountedPriceForDuration(250, selectedDuration);
-    const discountedPrice = applyDiscountToAmount(introPrice, discountPercent);
+    const basePrice = getBasePriceForDuration(getBase15MinutePrice(selectedGame as any), selectedDuration);
+    const discountedPrice = applyDiscountToAmount(basePrice, discountPercent);
     const finalPrice = addGst(discountedPrice);
 
     Alert.alert(
       'Confirm Nex Session',
-      `Game: ${selectedGame?.name}\nPlayers: ${players}\nStations: ${stationList || 'N/A'}\nDuration: ${selectedDuration} minutes\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nFinal Price incl GST: ${finalPrice.toFixed(2)}`,
+      `Game: ${selectedGame?.name}\nPlayers: ${players}\nStations: ${stationList || 'N/A'}\nDuration: ${selectedDuration} minutes\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nFinal Price incl GST: ${finalPrice}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -104,7 +108,29 @@ export default function NexPlaygroundTimeSelectionScreen({
                 duration_minutes: selectedDuration,
                 players,
               });
-              const payout = addGst(applyDiscountToAmount(getDiscountedPriceForDuration(250, selectedDuration), discountPercent));
+
+              if (playerContact) {
+                const contactPayload = buildSessionContactPayload({
+                  name: playerContact.name,
+                  phone: playerContact.phone,
+                  selectedGameName: selectedGame?.name ?? 'Nex Game',
+                  selectedGameId: gameId,
+                  stationName: stationList || 'NEX-01',
+                  source: 'nex-playground',
+                  originalGamePrice: basePrice,
+                  selectedSessionTime: selectedDuration,
+                  discountCode,
+                  discountPct: discountPercent,
+                  finalPriceInclGst: finalPrice,
+                });
+
+                await axios.post('https://dspirezone-app-dev.azurewebsites.net/api/vr/session-contacts', contactPayload, {
+                  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                  timeout: 8000,
+                });
+              }
+
+              const payout = finalPrice;
               setConfirmedSession({
                 ...session,
                 discount_percent: discountPercent,

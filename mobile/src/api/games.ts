@@ -77,6 +77,7 @@ function normalizeGameListItem(raw: GameApiShape): GameListItem {
     thumbnail_url: String(raw.thumbnail_url ?? ''),
     status: raw.status as GameListItem['status'],
     pricing_category: readOptionalString(raw, 'pricing_category', 'pricingCategory', 'price_category', 'priceCategory'),
+    category_price: readOptionalNumber(raw, 'category_price', 'categoryPrice'),
     price_15_minutes: readOptionalNumber(
       raw,
       'price_15_minutes',
@@ -105,6 +106,7 @@ function normalizeGame(raw: GameApiShape): Game {
     status: raw.status as Game['status'],
     created_at: String(raw.created_at ?? ''),
     pricing_category: readOptionalString(raw, 'pricing_category', 'pricingCategory', 'price_category', 'priceCategory'),
+    category_price: readOptionalNumber(raw, 'category_price', 'categoryPrice'),
     price_15_minutes: readOptionalNumber(
       raw,
       'price_15_minutes',

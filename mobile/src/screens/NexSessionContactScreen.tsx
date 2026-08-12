@@ -115,31 +115,11 @@ export default function NexSessionContactScreen({ navigation, route }: NexSessio
 
     setSubmitting(true);
     try {
-      const originalGamePrice = getBase15MinutePrice(selectedGame as any);
-      const finalPriceInclGst = addGst(applyDiscountToAmount(originalGamePrice, Number(activeDiscount.discount_pct ?? 0)));
-      const payload = buildSessionContactPayload({
-        name,
-        phone,
-        selectedGameName: selectedGame.name,
-        selectedGameId: selectedGame.id,
-        stationName: 'NEX-01',
-        source: 'nex-playground',
-        originalGamePrice,
-        discountCode: activeDiscount.code,
-        discountPct: Number(activeDiscount.discount_pct ?? 0),
-        finalPriceInclGst,
-      });
-
-      await axios.post(SESSION_CONTACT_URL, payload, {
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        timeout: 8000,
-      });
-
-      setPlayerContact({ name: payload.name, phone: payload.phone_number });
+      setPlayerContact({ name: name.trim(), phone: phone.replace(/\D/g, '') });
       storeSetDiscountCode(activeDiscount.code, Number(activeDiscount.discount_pct ?? 0));
       navigation.navigate('NexPlaygroundTimeSelection', { gameId });
     } catch (error: any) {
-      const message = error?.response?.data?.detail ?? error?.message ?? 'Unable to save your details right now.';
+      const message = error?.response?.data?.detail ?? error?.message ?? 'Unable to continue right now.';
       Alert.alert('Unable to continue', message);
     } finally {
       setSubmitting(false);

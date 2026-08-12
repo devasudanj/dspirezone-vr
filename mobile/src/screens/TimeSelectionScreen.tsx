@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 
 import { createSession } from '../api/sessions';
 import { fetchGameInstallations } from '../api/games';
@@ -24,6 +25,7 @@ import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
 import { buildSessionSlipHtml } from '../utils/sessionSlip';
+import { buildSessionContactPayload } from '../utils/sessionContact';
 import { printSessionSlip } from '../utils/print';
 import {
   formatRs,
@@ -81,10 +83,9 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
       .map((i) => i.headset_code)
       .join(', ');
     const basePrice = getBasePriceForDuration(price15Minutes, selectedDuration);
-    const introDiscountedPrice = getDiscountedPriceForDuration(price15Minutes, selectedDuration);
-    const promoDiscountedPrice = applyDiscountToAmount(introDiscountedPrice, discountPercent);
-    const finalPriceInclGst = addGst(promoDiscountedPrice);
-    const gstAmount = finalPriceInclGst - promoDiscountedPrice;
+    const discountedBeforeGst = applyDiscountToAmount(basePrice, discountPercent);
+    const finalPriceInclGst = addGst(discountedBeforeGst);
+    const gstAmount = finalPriceInclGst - discountedBeforeGst;
     const sessionInfoCreatedAt = new Date();
     const createdDate = sessionInfoCreatedAt.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -117,6 +118,28 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                 game_id: gameId,
                 duration_minutes: selectedDuration,
               });
+
+              if (playerContact) {
+                const contactPayload = buildSessionContactPayload({
+                  name: playerContact.name,
+                  phone: playerContact.phone,
+                  selectedGameName: selectedGame?.name ?? 'VR Game',
+                  selectedGameId: gameId,
+                  stationName: headsetList || 'TV1',
+                  source: 'vr-app',
+                  originalGamePrice: basePrice,
+                  selectedSessionTime: selectedDuration,
+                  discountCode,
+                  discountPct: discountPercent,
+                  finalPriceInclGst,
+                });
+
+                await axios.post('https://dspirezone-app-dev.azurewebsites.net/api/vr/session-contacts', contactPayload, {
+                  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                  timeout: 8000,
+                });
+              }
+
               const confirmedSessionPayload = {
                 ...session,
                 pricing_category: selectedGame?.pricing_category ?? null,

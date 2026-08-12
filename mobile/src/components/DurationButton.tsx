@@ -12,7 +12,6 @@ import type { SessionDuration } from '../types';
 import {
   formatRs,
   getBasePriceForDuration,
-  applyIntroDiscount,
   applyDiscountToAmount,
   INTRO_OFFER_DISCOUNT_PERCENT,
 } from '../utils/pricing';
@@ -41,10 +40,9 @@ export default function DurationButton({
 }: Props) {
   const meta = DURATION_META[minutes];
   const basePrice = getBasePriceForDuration(price15Minutes, minutes);
-  const introDiscountedPrice = applyIntroDiscount(basePrice);
   const finalDiscountedPrice = discountPercent > 0
-    ? applyDiscountToAmount(introDiscountedPrice, discountPercent)
-    : introDiscountedPrice;
+    ? applyDiscountToAmount(basePrice, discountPercent)
+    : applyDiscountToAmount(basePrice, INTRO_OFFER_DISCOUNT_PERCENT);
   const displayedDiscountLabel = discountPercent > 0
     ? `${discountPercent}% OFF`
     : `${INTRO_OFFER_DISCOUNT_PERCENT}% OFF`;

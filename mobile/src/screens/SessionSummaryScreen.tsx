@@ -23,6 +23,7 @@ import { buildSessionSlipHtml } from '../utils/sessionSlip';
 import { printSessionSlip, shareSessionSlip } from '../utils/print';
 import {
   addGst,
+  applyDiscountToAmount,
   formatRs,
   getAmountBeforeGst,
   getDiscountedPriceForDuration,
@@ -120,18 +121,19 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
     second: '2-digit',
     timeZone: 'Asia/Kolkata',
   });
-  const originalPrice = getSessionOriginalPrice(session);
+  const originalPrice = getSessionOriginalPrice(session) ?? (typeof session.price_15_minutes === 'number' ? session.price_15_minutes : null);
   const discountPercent = session.discount_percent ?? INTRO_OFFER_DISCOUNT_PERCENT;
   const discountedSubtotal = typeof session.total_price === 'number'
     ? getAmountBeforeGst(session.total_price)
     : (
-        typeof session.price_15_minutes === 'number' && (session.duration_minutes === 15 || session.duration_minutes === 30)
-          ? getDiscountedPriceForDuration(session.price_15_minutes, session.duration_minutes as 15 | 30)
+        originalPrice !== null
+          ? applyDiscountToAmount(originalPrice, discountPercent)
           : null
       );
   const taxableAmount = discountedSubtotal ?? originalPrice;
   const gstAmount = taxableAmount !== null ? addGst(taxableAmount) - taxableAmount : null;
   const finalPrice = taxableAmount !== null ? addGst(taxableAmount) : null;
+  const discountAmount = originalPrice !== null && taxableAmount !== null ? originalPrice - taxableAmount : 0;
 
   return (
     <View style={styles.container}>
@@ -167,14 +169,13 @@ export default function SessionSummaryScreen({ route, navigation }: SessionSumma
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Price</Text>
               <View style={styles.priceValueWrap}>
-                {originalPrice !== null && originalPrice > taxableAmount && (
-                  <Text style={styles.priceOriginal}>{formatRs(originalPrice)} per person</Text>
+                {originalPrice !== null && (
+                  <Text style={styles.priceOriginal}>Actual game price: {formatRs(originalPrice)}</Text>
                 )}
-                <Text style={styles.priceDiscounted}>{formatRs(taxableAmount)} per person</Text>
                 <Text style={styles.priceDiscountTag}>Promo code: {discountCode}</Text>
-                <Text style={styles.priceDiscountTag}>Discount applied: {discountPercent}% OFF</Text>
+                <Text style={styles.priceDiscountTag}>Discount applied: {discountPercent}% OFF ({formatRs(discountAmount)})</Text>
                 <Text style={styles.priceDiscountTag}>GST ({GST_PERCENT}%): {formatRs(gstAmount)}</Text>
-                <Text style={styles.priceDiscounted}>Final amount incl GST: {formatRs(finalPrice)}</Text>
+                <Text style={styles.priceDiscounted}>Final total incl GST: {formatRs(finalPrice)}</Text>
               </View>
             </View>
           )}

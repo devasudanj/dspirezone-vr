@@ -164,9 +164,15 @@ export default function NexPlaygroundSessionSummaryScreen({
   });
   const discountCode = useNexSessionStore((s) => s.discountCode);
   const discountPercent = session.discount_percent ?? 0;
-  const subtotalBeforeGst = typeof session.total_price === 'number' ? session.total_price / (1 + GST_PERCENT / 100) : 0;
-  const gstAmount = typeof session.total_price === 'number' ? session.total_price - subtotalBeforeGst : 0;
+  const actualGamePrice = 250;
+  const subtotalBeforeGst = typeof session.total_price === 'number'
+    ? session.total_price / (1 + GST_PERCENT / 100)
+    : addGst(actualGamePrice) - (actualGamePrice * (discountPercent / 100));
+  const gstAmount = typeof session.total_price === 'number'
+    ? session.total_price - subtotalBeforeGst
+    : (typeof session.total_price === 'number' ? session.total_price - subtotalBeforeGst : 0);
   const finalAmount = typeof session.total_price === 'number' ? session.total_price : addGst(subtotalBeforeGst);
+  const discountAmount = actualGamePrice * (discountPercent / 100);
 
   return (
     <View style={styles.container}>
@@ -196,8 +202,9 @@ export default function NexPlaygroundSessionSummaryScreen({
             highlight
           />
           <SlipRow label="Duration" value={`${session.duration_minutes} minutes`} />
+          <SlipRow label="Actual Game Price" value={formatRs(actualGamePrice)} />
           <SlipRow label="Promo Code" value={discountCode} />
-          <SlipRow label="Discount Applied" value={`${discountPercent}% OFF`} />
+          <SlipRow label="Discount Applied" value={`${discountPercent}% OFF (${formatRs(discountAmount)})`} />
           <SlipRow label="GST (18%)" value={formatRs(gstAmount)} />
           <SlipRow label="Final Amount incl GST" value={formatRs(finalAmount)} highlight />
           <SlipRow label="Date" value={dateStr} />

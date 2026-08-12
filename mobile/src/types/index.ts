@@ -34,6 +34,7 @@ export interface GameListItem {
   thumbnail_url: string;
   status: GameStatus;
   pricing_category?: string | null;
+  category_price?: number | null;
   price_15_minutes?: number | null;
 }
 
@@ -51,6 +52,7 @@ export interface Game {
   status: GameStatus;
   created_at: string; // ISO 8601
   pricing_category?: string | null;
+  category_price?: number | null;
   price_15_minutes?: number | null;
 }
 

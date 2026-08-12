@@ -14,8 +14,25 @@ export interface ActiveDiscountCode {
 
 const DEFAULT_PRICE_15_MINUTES = 250;
 
-export function getBase15MinutePrice(game?: Pick<Game, 'price_15_minutes'> | null): number {
-  return game?.price_15_minutes ?? DEFAULT_PRICE_15_MINUTES;
+export function getBase15MinutePrice(
+  game?: Pick<Game, 'pricing_category' | 'category_price' | 'price_15_minutes'> | null,
+): number {
+  const categoryName = game?.pricing_category?.trim();
+  const categoryPrice = typeof game?.category_price === 'number' ? game.category_price : null;
+
+  if (categoryName?.toLowerCase() === 'special vr' && categoryPrice !== null) {
+    return categoryPrice;
+  }
+
+  if (typeof game?.price_15_minutes === 'number') {
+    return game.price_15_minutes;
+  }
+
+  if (categoryPrice !== null) {
+    return categoryPrice;
+  }
+
+  return DEFAULT_PRICE_15_MINUTES;
 }
 
 export function getBasePriceForDuration(
@@ -77,6 +94,10 @@ export function applyDiscountToAmount(amount: number, discountPercent: number): 
   return roundCurrency(amount * (1 - discountPercent / 100));
 }
 
+export function getPriceAfterSelectedDiscount(amount: number, discountPercent: number): number {
+  return applyDiscountToAmount(amount, discountPercent);
+}
+
 export function getFinalPriceWithGst(
   price15Minutes: number,
   durationMinutes: SessionDuration,
@@ -85,7 +106,7 @@ export function getFinalPriceWithGst(
 }
 
 export function formatRs(price: number): string {
-  return `Rs. ${roundCurrency(price).toFixed(2)}`;
+  return `Rs. ${Math.round(roundCurrency(price))}`;
 }
 
 export function getSessionDisplayPrice(session: Pick<Session, 'total_price' | 'price_15_minutes' | 'duration_minutes'>): number | null {
@@ -119,5 +140,5 @@ export function getSessionOriginalPrice(
 }
 
 function roundCurrency(value: number): number {
-  return Math.round(value * 100) / 100;
+  return Math.round(value);
 }
