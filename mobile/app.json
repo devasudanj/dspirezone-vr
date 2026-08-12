@@ -32,7 +32,7 @@
     },
     "plugins": [],
     "extra": {
-      "apiBaseUrl": "https://dspirezone-vr-app.azurewebsites.net",
+      "apiBaseUrl": "https://dspirezone-app-dev.azurewebsites.net",
       "eas": {
         "projectId": "4664e1c9-4756-4409-ad7a-66dad16db318"
       }
