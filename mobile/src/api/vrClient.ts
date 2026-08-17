@@ -9,7 +9,7 @@ import axios from 'axios';
 
 const VR_BASE_URL =
   process.env.EXPO_PUBLIC_VR_API_BASE_URL ??
-  'https://dspirezone-app-dev.azurewebsites.net';
+  'https://www.dspirezone.com';
 
 const vrClient = axios.create({
   baseURL: VR_BASE_URL,

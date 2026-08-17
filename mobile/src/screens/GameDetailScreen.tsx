@@ -25,6 +25,7 @@ import { fetchGame, fetchGameInstallations, recordGameVisit } from '../api/games
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useSessionStore } from '../store/sessionStore';
+import { hasUsableInstallation } from '../utils/installationStatus';
 import type { Game, Installation } from '../types';
 import type { GameDetailProps } from '../navigation/types';
 
@@ -74,10 +75,7 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
     return () => { cancelled = true; };
   }, [gameId]);
 
-  const activeInstallations = installations.filter(
-    (i) => i.installation_status !== 'EXPIRED',
-  );
-  const canStartSession = game?.status === 'ACTIVE' && activeInstallations.length > 0;
+  const canStartSession = game?.status === 'ACTIVE' && hasUsableInstallation(installations);
 
   const handleStartSession = () => {
     if (!game) return;
@@ -237,10 +235,17 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
                     : inst.installation_status === 'EXPIRING_SOON'
                     ? Colors.warning
                     : Colors.danger;
+                const label =
+                  inst.installation_status === 'ACTIVE'
+                    ? 'Active'
+                    : inst.installation_status === 'EXPIRING_SOON'
+                    ? 'Expiring Soon'
+                    : 'Expired';
                 return (
                   <View key={inst.id} style={[styles.headsetChip, { borderColor: dotColor }]}>
                     <View style={[styles.headsetDot, { backgroundColor: dotColor }]} />
                     <Text style={styles.headsetChipText}>{inst.headset_code}</Text>
+                    <Text style={styles.headsetStatusText}>{label}</Text>
                   </View>
                 );
               })}
@@ -258,7 +263,7 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
           <Text style={styles.blockedHint}>
             {game.status !== 'ACTIVE'
               ? `Game is ${game.status.toLowerCase()} – sessions unavailable`
-              : 'No active headset installations available'}
+              : 'No active or expiring-soon headset installations available'}
           </Text>
         )}
         <TouchableOpacity
@@ -454,6 +459,11 @@ const styles = StyleSheet.create({
     fontSize: Typography.xs,
     fontWeight: Typography.semibold,
     letterSpacing: 0.8,
+  },
+  headsetStatusText: {
+    color: Colors.textSecondary,
+    fontSize: Typography.xs,
+    marginTop: 2,
   },
 
   // ── Footer CTA ──

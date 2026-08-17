@@ -31,7 +31,7 @@ interface PlatformOption {
 const PLATFORMS: PlatformOption[] = [
   {
     id: 'NEX_PLAYGROUND',
-    title: 'Nex Playground',
+    title: 'Action Playground',
     subtitle: 'Full-body motion gaming\nNo headset required',
     icon: 'body-outline',
     accentColor: Colors.accent,

@@ -10,8 +10,9 @@ type GameApiShape = Record<string, unknown>;
 type InstallationsApiShape = Record<string, unknown>;
 
 const VR_INSTALLATIONS_BASE_URL =
-  process.env.EXPO_PUBLIC_VR_INSTALLATIONS_API_BASE_URL
-  ?? 'https://dspirezone-vr-app.azurewebsites.net';
+  process.env.EXPO_PUBLIC_VR_API_BASE_URL
+  ?? process.env.EXPO_PUBLIC_VR_INSTALLATIONS_API_BASE_URL
+  ?? 'https://www.dspirezone.com';
 
 async function getWithFallback<T>(primaryPath: string, fallbackPath: string, config?: unknown): Promise<T> {
   try {
@@ -201,7 +202,7 @@ export async function fetchGameInstallations(
   gameId: number,
   activeOnly = false,
 ): Promise<Installation[]> {
-  const endpoint = `${VR_INSTALLATIONS_BASE_URL}/games/${gameId}/installations`;
+  const endpoint = `${VR_INSTALLATIONS_BASE_URL}/api/games/${gameId}/installations`;
   const { data } = await vrClient.get<unknown>(endpoint, {
     params: { active_only: activeOnly },
   });

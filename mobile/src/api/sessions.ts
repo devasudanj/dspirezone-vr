@@ -7,8 +7,9 @@ import vrClient from './vrClient';
 import type { Session, SessionCreatePayload } from '../types';
 
 const VR_SESSIONS_BASE_URL =
-  process.env.EXPO_PUBLIC_VR_SESSIONS_API_BASE_URL
-  ?? 'https://dspirezone-vr-app.azurewebsites.net';
+  process.env.EXPO_PUBLIC_VR_API_BASE_URL
+  ?? process.env.EXPO_PUBLIC_VR_SESSIONS_API_BASE_URL
+  ?? 'https://www.dspirezone.com';
 
 function sessionsUrl(path: string): string {
   return `${VR_SESSIONS_BASE_URL}${path}`;

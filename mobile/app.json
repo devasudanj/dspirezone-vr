@@ -2,7 +2,7 @@
   "expo": {
     "name": "Dspire VR Zone",
     "slug": "dzexpo-proj",
-    "version": "1.5.8",
+    "version": "1.5.9",
     "sdkVersion": "54.0.0",
     "orientation": "landscape",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
         "backgroundColor": "#0D0D1A"
       },
       "package": "com.dspirevr.zone",
-      "versionCode": 14,
+      "versionCode": 15,
       "compileSdkVersion": 35,
       "targetSdkVersion": 35,
       "minSdkVersion": 24,
@@ -32,7 +32,7 @@
     },
     "plugins": [],
     "extra": {
-      "apiBaseUrl": "https://dspirezone-app-dev.azurewebsites.net",
+      "apiBaseUrl": "https://www.dspirezone.com",
       "eas": {
         "projectId": "4664e1c9-4756-4409-ad7a-66dad16db318"
       }

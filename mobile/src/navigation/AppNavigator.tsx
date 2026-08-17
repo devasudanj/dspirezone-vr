@@ -90,7 +90,7 @@ function GamesNavigator() {
       <GamesStack.Screen
         name="NexPlaygroundLibrary"
         component={NexPlaygroundLibraryScreen}
-        options={{ title: '🕹️ Nex Playground' }}
+        options={{ title: '🕹️ Action Playground' }}
       />
       <GamesStack.Screen
         name="NexPlaygroundDetail"

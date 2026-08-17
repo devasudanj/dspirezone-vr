@@ -39,6 +39,8 @@ export default function HeadsetSelectionScreen({ route, navigation }: HeadsetSel
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const usableInstallations = installations.filter((inst) => inst.installation_status !== 'EXPIRED');
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -86,9 +88,12 @@ export default function HeadsetSelectionScreen({ route, navigation }: HeadsetSel
         <Text style={styles.headerSub}>
           Select a headset to play on
         </Text>
+        {(installations.some((inst) => inst.installation_status === 'EXPIRED') || installations.some((inst) => inst.installation_status === 'EXPIRING_SOON')) && (
+          <Text style={styles.headerNote}>Status: Expired / Active / Expiring Soon</Text>
+        )}
       </View>
 
-      {installations.length === 0 ? (
+      {usableInstallations.length === 0 ? (
         <View style={styles.centred}>
           <Ionicons name="warning" size={48} color={Colors.warning} />
           <Text style={styles.emptyText}>
@@ -100,7 +105,7 @@ export default function HeadsetSelectionScreen({ route, navigation }: HeadsetSel
         </View>
       ) : (
         <FlatList
-          data={installations}
+          data={usableInstallations}
           keyExtractor={(item) => String(item.id)}
           numColumns={2}
           contentContainerStyle={styles.grid}
@@ -162,6 +167,12 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: Typography.base,
     marginTop: 2,
+  },
+  headerNote: {
+    marginTop: 8,
+    color: Colors.warning,
+    fontSize: Typography.sm,
+    fontWeight: Typography.semibold,
   },
 
   grid: { padding: 20, gap: 16 },
