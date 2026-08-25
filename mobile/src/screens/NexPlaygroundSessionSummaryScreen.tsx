@@ -18,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { printSessionSlip, shareSessionSlip } from '../utils/print';
-import { addGst, formatRs, GST_PERCENT } from '../utils/pricing';
+import { addGst, formatRs, getBase15MinutePrice, getBasePriceForDuration, GST_PERCENT } from '../utils/pricing';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import { useNexSessionStore } from '../store/nexSessionStore';
@@ -29,6 +29,7 @@ import type { NexPlaygroundSessionSummaryProps } from '../navigation/types';
 function buildNexSlipHtml(
   session: NexSession,
   playerContact?: { name: string; phone: string } | null,
+  pricePerPerson?: number,
 ): string {
   const createdAt = new Date(session.created_at);
   const dateStr = createdAt.toLocaleDateString('en-US', {
@@ -44,6 +45,9 @@ function buildNexSlipHtml(
   const discountPercent = session.discount_percent ?? 0;
   const finalAmount = typeof session.total_price === 'number' ? session.total_price : 0;
   const gstAmount = typeof session.total_price === 'number' ? finalAmount - (finalAmount / (1 + GST_PERCENT / 100)) : 0;
+  const perPersonRow = pricePerPerson != null
+    ? `<div class="row"><span class="label">Price per Person (×${session.players})</span><span class="value">${formatRs(pricePerPerson)} × ${session.players} = ${formatRs(pricePerPerson * session.players)}</span></div>`
+    : '';
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Nex Session Slip</title>
@@ -70,6 +74,7 @@ function buildNexSlipHtml(
 <div class="row highlight"><span class="label">Players</span><span class="value">${session.players}</span></div>
 <div class="row highlight"><span class="label">Stations</span><span class="value">${session.station_codes.join(', ') || 'N/A'}</span></div>
 <div class="row"><span class="label">Duration</span><span class="value">${session.duration_minutes} minutes</span></div>
+${perPersonRow}
 <div class="row"><span class="label">Promo Code</span><span class="value">${discountCode}</span></div>
 <div class="row"><span class="label">Discount Applied</span><span class="value">${discountPercent}% OFF</span></div>
 <div class="row"><span class="label">GST (18%)</span><span class="value">${formatRs(gstAmount)}</span></div>
@@ -94,10 +99,18 @@ export default function NexPlaygroundSessionSummaryScreen({
   const confirmedSession = useNexSessionStore((s) => s.confirmedSession);
   const playerContact = useNexSessionStore((s) => s.playerContact);
   const resetFlow = useNexSessionStore((s) => s.resetFlow);
+  const discountCode = useNexSessionStore((s) => s.discountCode);
+  const selectedGame = useNexSessionStore((s) => s.selectedGame);
+  const selectedDuration = useNexSessionStore((s) => s.selectedDuration);
 
   const [session, setSession] = useState<NexSession | null>(confirmedSession);
   const [loading, setLoading] = useState(!confirmedSession);
   const [printing, setPrinting] = useState(false);
+
+  const pricePerPerson = getBasePriceForDuration(
+    getBase15MinutePrice(selectedGame as any),
+    ((session?.duration_minutes ?? confirmedSession?.duration_minutes ?? selectedDuration ?? 15) as any),
+  );
 
   useEffect(() => {
     if (confirmedSession) {
@@ -112,7 +125,7 @@ export default function NexPlaygroundSessionSummaryScreen({
     if (!session) return;
     setPrinting(true);
     try {
-      const html = buildNexSlipHtml(session, playerContact ?? undefined);
+      const html = buildNexSlipHtml(session, playerContact ?? undefined, pricePerPerson);
       await printSessionSlip(html);
     } catch (e: any) {
       Alert.alert('Print Error', e.message ?? 'Could not send to printer');
@@ -125,7 +138,7 @@ export default function NexPlaygroundSessionSummaryScreen({
     if (!session) return;
     setPrinting(true);
     try {
-      const html = buildNexSlipHtml(session, playerContact ?? undefined);
+      const html = buildNexSlipHtml(session, playerContact ?? undefined, pricePerPerson);
       await shareSessionSlip(html, session.session_code);
     } catch (e: any) {
       Alert.alert('Share Error', e.message ?? 'Could not share the slip');
@@ -162,15 +175,14 @@ export default function NexPlaygroundSessionSummaryScreen({
   const timeStr = createdAt.toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit',
   });
-  const discountCode = useNexSessionStore((s) => s.discountCode);
   const discountPercent = session.discount_percent ?? 0;
-  const actualGamePrice = 250;
+  const actualGamePrice = pricePerPerson * session.players;
   const subtotalBeforeGst = typeof session.total_price === 'number'
     ? session.total_price / (1 + GST_PERCENT / 100)
-    : addGst(actualGamePrice) - (actualGamePrice * (discountPercent / 100));
+    : actualGamePrice * (1 - discountPercent / 100);
   const gstAmount = typeof session.total_price === 'number'
     ? session.total_price - subtotalBeforeGst
-    : (typeof session.total_price === 'number' ? session.total_price - subtotalBeforeGst : 0);
+    : subtotalBeforeGst * (GST_PERCENT / 100);
   const finalAmount = typeof session.total_price === 'number' ? session.total_price : addGst(subtotalBeforeGst);
   const discountAmount = actualGamePrice * (discountPercent / 100);
 
@@ -202,7 +214,7 @@ export default function NexPlaygroundSessionSummaryScreen({
             highlight
           />
           <SlipRow label="Duration" value={`${session.duration_minutes} minutes`} />
-          <SlipRow label="Actual Game Price" value={formatRs(actualGamePrice)} />
+          <SlipRow label={`Price per Person (×${session.players})`} value={`${formatRs(pricePerPerson)} × ${session.players} = ${formatRs(actualGamePrice)}`} />
           <SlipRow label="Promo Code" value={discountCode} />
           <SlipRow label="Discount Applied" value={`${discountPercent}% OFF (${formatRs(discountAmount)})`} />
           <SlipRow label="GST (18%)" value={formatRs(gstAmount)} />

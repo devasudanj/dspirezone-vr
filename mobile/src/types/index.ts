@@ -143,6 +143,7 @@ export interface NexGame {
   category: NexGameCategory;
   thumbnail_url: string;
   trailer_url: string | null;
+  is_multiplayer?: boolean;
   min_players: number;
   max_players: number;
   min_age: number | null;

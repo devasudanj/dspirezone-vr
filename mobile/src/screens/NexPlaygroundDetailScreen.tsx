@@ -159,6 +159,12 @@ export default function NexPlaygroundDetailScreen({
             <View style={styles.chip}>
               <Text style={styles.chipText}>{game.category}</Text>
             </View>
+            {game.is_multiplayer && (
+              <View style={[styles.chip, styles.multiplayerChip]}>
+                <Ionicons name="people" size={12} color={Colors.accent} />
+                <Text style={[styles.chipText, styles.multiplayerChipText]}>Multiplayer</Text>
+              </View>
+            )}
           </View>
 
           {/* Specs */}
@@ -166,7 +172,7 @@ export default function NexPlaygroundDetailScreen({
             <SpecItem
               icon="people-outline"
               label="Players"
-              value={`${game.min_players}–${game.max_players}`}
+              value={`1–${game.max_players}`}
             />
             {game.min_age !== null && (
               <SpecItem
@@ -289,7 +295,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.bold,
     color: Colors.textPrimary,
   },
-  metaRow: { flexDirection: 'row', gap: 8 },
+  metaRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
     backgroundColor: Colors.surface,
     borderRadius: 8,
@@ -298,10 +304,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  multiplayerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderColor: Colors.accent,
+    backgroundColor: Colors.surface,
+  },
   chipText: {
     fontSize: Typography.sm,
     fontWeight: Typography.medium,
     color: Colors.textSecondary,
+  },
+  multiplayerChipText: {
+    color: Colors.accent,
   },
   specsGrid: { gap: 12 },
   specItem: {

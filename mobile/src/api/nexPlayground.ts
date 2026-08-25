@@ -28,6 +28,8 @@ interface NexApiGame {
   description?: string;
   status?: string;
   is_available?: boolean;
+  is_multiplayer?: boolean;
+  max_players?: number;
   station_id?: number;
   category?: string;
   thumbnail_url?: string;
@@ -245,6 +247,9 @@ function mapNexApiGameListItem(item: NexApiGame): NexGameListItem {
 
 function mapNexApiGameDetail(item: NexApiGame): NexGame {
   const trailerUrl = resolveTrailerUrl(item);
+  const maxPlayers = typeof item.max_players === 'number' && item.max_players > 0
+    ? item.max_players
+    : item.is_multiplayer ? 4 : 1;
   return {
     id: String(item.id),
     name: item.name,
@@ -252,8 +257,9 @@ function mapNexApiGameDetail(item: NexApiGame): NexGame {
     category: normalizeNexCategory(item.category),
     thumbnail_url: resolveThumbnailUrl(item),
     trailer_url: typeof trailerUrl === 'string' && trailerUrl.trim().length > 0 ? trailerUrl : null,
+    is_multiplayer: item.is_multiplayer ?? (maxPlayers > 1),
     min_players: 1,
-    max_players: 4,
+    max_players: maxPlayers,
     min_age: null,
     status: normalizeNexStatus(item.status),
   };

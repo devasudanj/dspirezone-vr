@@ -87,13 +87,14 @@ export default function NexPlaygroundTimeSelectionScreen({
     if (!selectedDuration) return;
 
     const stationList = stations.map((s) => s.code).join(', ');
-    const basePrice = getBasePriceForDuration(getBase15MinutePrice(selectedGame as any), selectedDuration);
+    const pricePerPerson = getBasePriceForDuration(getBase15MinutePrice(selectedGame as any), selectedDuration);
+    const basePrice = pricePerPerson * players;
     const discountedPrice = applyDiscountToAmount(basePrice, discountPercent);
     const finalPrice = addGst(discountedPrice);
 
     Alert.alert(
       'Confirm Nex Session',
-      `Game: ${selectedGame?.name}\nPlayers: ${players}\nStations: ${stationList || 'N/A'}\nDuration: ${selectedDuration} minutes\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nFinal Price incl GST: ${finalPrice}`,
+      `Game: ${selectedGame?.name}\nPlayers: ${players}\nPrice per Person: ₹${pricePerPerson}\nSubtotal (${players}x): ₹${basePrice}\nStations: ${stationList || 'N/A'}\nDuration: ${selectedDuration} minutes\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nFinal Price incl GST: ₹${finalPrice}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
