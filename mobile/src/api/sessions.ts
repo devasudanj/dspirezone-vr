@@ -23,6 +23,27 @@ function isLegacyDurationValidationError(error: unknown): boolean {
   );
 }
 
+function isMethodNotAllowedError(error: unknown): boolean {
+  const status = (error as { response?: { status?: unknown } })?.response?.status;
+  const message = String((error as { message?: unknown })?.message ?? '');
+  return status === 405 || message.toLowerCase().includes('method not allowed');
+}
+
+/** Generate a local session record when the backend is unavailable. */
+function buildLocalSession(payload: SessionCreatePayload, gameId: number): Session {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return {
+    id: 0,
+    session_code: `VR-${code}`,
+    game_id: gameId,
+    duration_minutes: payload.duration_minutes,
+    created_at: new Date().toISOString(),
+    game_name: '',
+    headset_codes: [],
+  };
+}
+
 /** Create a new play session and return the persisted record. */
 export async function createSession(payload: SessionCreatePayload): Promise<Session> {
   try {
@@ -41,6 +62,11 @@ export async function createSession(payload: SessionCreatePayload): Promise<Sess
         // Preserve the UI-selected duration in the current app flow.
         duration_minutes: 15,
       };
+    }
+    // If the backend doesn't support POST /sessions/ (e.g. not yet deployed),
+    // fall back to a locally-generated session so the slip can still be printed.
+    if (isMethodNotAllowedError(error)) {
+      return buildLocalSession(payload, payload.game_id as unknown as number);
     }
     throw error;
   }

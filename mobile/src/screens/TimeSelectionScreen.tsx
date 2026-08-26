@@ -57,10 +57,8 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
 
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [selectedDuration, _setDuration] = useState<SessionDuration | null>(null);
-  const [playMode, setPlayMode] = useState<'solo' | 'multiplayer'>('solo');
   const [loading, setLoading] = useState(false);
 
-  const isMultiplayer = selectedGame?.is_multiplayer ?? false;
   const price15Minutes = getBase15MinutePrice(selectedGame);
 
   useEffect(() => {
@@ -101,11 +99,11 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
       timeZone: 'Asia/Kolkata',
     });
 
-    const modeLabel = isMultiplayer ? (playMode === 'multiplayer' ? 'Multiplayer' : 'Solo') : 'Solo';
+    const modeLabel = 'Solo';
 
     Alert.alert(
       'Confirm Session',
-      `Game: ${selectedGame?.name}\nMode: ${modeLabel}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nGST (18%): ${formatRs(gstAmount)}\nFinal Price incl GST: ${formatRs(finalPriceInclGst)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
+      `Game: ${selectedGame?.name}\nHeadsets: ${headsetList || 'N/A'}\nDuration: ${selectedDuration} minutes\nActual Price: ${formatRs(basePrice)} per person\nPromo Code: ${discountCode}\nDiscount: ${discountPercent}% OFF\nGST (18%): ${formatRs(gstAmount)}\nFinal Price incl GST: ${formatRs(finalPriceInclGst)} per person\nSession Info Created: ${createdDate} ${createdTime} IST`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -198,70 +196,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
           )}
         </View>
 
-        {/* Play Mode — only shown for multiplayer games */}
-        {isMultiplayer && (
-          <View style={styles.playModeSection}>
-            <Text style={styles.playModeLabel}>Play Mode</Text>
-            <View style={styles.playModeRow}>
-              <TouchableOpacity
-                style={[
-                  styles.playModeBtn,
-                  playMode === 'solo' && styles.playModeBtnActive,
-                ]}
-                onPress={() => setPlayMode('solo')}
-                accessibilityRole="button"
-                accessibilityLabel="Solo play mode"
-              >
-                <Ionicons
-                  name="person"
-                  size={18}
-                  color={playMode === 'solo' ? Colors.textOnPrimary : Colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    styles.playModeBtnText,
-                    playMode === 'solo' && styles.playModeBtnTextActive,
-                  ]}
-                >
-                  Solo
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.playModeBtn,
-                  playMode === 'multiplayer' && styles.playModeBtnActiveMulti,
-                ]}
-                onPress={() => setPlayMode('multiplayer')}
-                accessibilityRole="button"
-                accessibilityLabel="Multiplayer play mode"
-              >
-                <Ionicons
-                  name="people"
-                  size={18}
-                  color={playMode === 'multiplayer' ? Colors.textOnPrimary : Colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    styles.playModeBtnText,
-                    playMode === 'multiplayer' && styles.playModeBtnTextActive,
-                  ]}
-                >
-                  Multiplayer
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {playMode === 'multiplayer' && (
-              <View style={styles.multiplayerNote}>
-                <Ionicons name="information-circle-outline" size={16} color={Colors.accent} />
-                <Text style={styles.multiplayerNoteText}>
-                  This is based on headset availability and will be determined by the VR admin during booking.
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+        {/* Play Mode — removed for VR games (solo only) */}
 
         {/* Duration selection */}
         <View style={styles.body}>
