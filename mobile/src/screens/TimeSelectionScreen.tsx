@@ -125,7 +125,7 @@ export default function TimeSelectionScreen({ route, navigation }: TimeSelection
                   selectedGameId: gameId,
                   stationName: headsetList || 'TV1',
                   source: 'vr-app',
-                  originalGamePrice: basePrice,
+                  originalGamePrice: price15Minutes,
                   selectedSessionTime: selectedDuration,
                   discountCode,
                   discountPct: discountPercent,
