@@ -44,6 +44,33 @@ interface NexApiListResponse {
   items: NexApiGame[];
 }
 
+interface NexApiPaginatedListResponse {
+  items?: NexApiGame[];
+  results?: NexApiGame[];
+  data?: NexApiGame[];
+}
+
+type NexGamesListResponse =
+  | NexApiListResponse
+  | NexApiPaginatedListResponse
+  | Array<NexGameListItem | GameListItem | NexApiGame>;
+
+type NexGamesListRawItem = NexGameListItem | GameListItem | NexApiGame;
+
+function extractNexGamesListItems(data: NexGamesListResponse): NexGamesListRawItem[] {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray((data as NexApiPaginatedListResponse).items)) {
+    return (data as NexApiPaginatedListResponse).items as NexGamesListRawItem[];
+  }
+  if (Array.isArray((data as NexApiPaginatedListResponse).results)) {
+    return (data as NexApiPaginatedListResponse).results as NexGamesListRawItem[];
+  }
+  if (Array.isArray((data as NexApiPaginatedListResponse).data)) {
+    return (data as NexApiPaginatedListResponse).data as NexGamesListRawItem[];
+  }
+  return [];
+}
+
 // ---------------------------------------------------------------------------
 // Mock data
 // ---------------------------------------------------------------------------
@@ -288,18 +315,43 @@ function parseGameId(gameId: string): number {
 export async function fetchNexGames(
   category?: NexGameCategory,
 ): Promise<NexGameListItem[]> {
-  const params: Record<string, string> = { status: 'active' };
+  // Some deployments paginate this endpoint with a default page size of 20.
+  // Send broadly compatible page-size hints so we can retrieve the full list.
+  const params: Record<string, string | number> = {
+    status: 'active',
+    limit: 500,
+    per_page: 500,
+    page_size: 500,
+  };
   if (category) params.category = category;
 
-  const { data } = await client.get<NexApiListResponse | Array<NexGameListItem | GameListItem | NexApiGame>>('/api/nex-games/', {
-    params,
-  });
+  const items: NexGamesListRawItem[] = [];
+  const seenIds = new Set<string>();
+  const PAGE_SIZE_FALLBACK = 20;
+  const MAX_PAGES = 30;
 
-  const items = Array.isArray(data)
-    ? data
-    : Array.isArray((data as NexApiListResponse).items)
-      ? (data as NexApiListResponse).items
-      : [];
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const pageParams = page === 1 ? params : { ...params, page };
+    const { data } = await client.get<NexGamesListResponse>('/api/nex-games/', {
+      params: pageParams,
+    });
+
+    const pageItems = extractNexGamesListItems(data);
+    if (pageItems.length === 0) break;
+
+    let addedCount = 0;
+    pageItems.forEach((item, index) => {
+      const rawId = (item as { id?: string | number }).id;
+      const dedupeKey = rawId !== undefined ? String(rawId) : `${page}-${index}`;
+      if (seenIds.has(dedupeKey)) return;
+      seenIds.add(dedupeKey);
+      items.push(item);
+      addedCount += 1;
+    });
+
+    // Stop if endpoint is unpaged/fully returned or page started repeating.
+    if (pageItems.length < PAGE_SIZE_FALLBACK || addedCount === 0) break;
+  }
 
   return items.map((item) => {
     if (typeof item.id === 'string') {

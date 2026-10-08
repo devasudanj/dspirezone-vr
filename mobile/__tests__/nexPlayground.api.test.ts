@@ -65,7 +65,13 @@ describe('fetchNexGames', () => {
     const danceGames = await fetchNexGames('Dance');
     expect(danceGames.every((g) => g.category === 'Dance')).toBe(true);
     expect(mockedClient.get).toHaveBeenCalledWith('/api/nex-games/', {
-      params: { status: 'active', category: 'Dance' },
+      params: {
+        status: 'active',
+        category: 'Dance',
+        limit: 500,
+        per_page: 500,
+        page_size: 500,
+      },
     });
   });
 
@@ -74,7 +80,13 @@ describe('fetchNexGames', () => {
     const games = await fetchNexGames('Multiplayer');
     expect(games).toEqual([]);
     expect(mockedClient.get).toHaveBeenCalledWith('/api/nex-games/', {
-      params: { status: 'active', category: 'Multiplayer' },
+      params: {
+        status: 'active',
+        category: 'Multiplayer',
+        limit: 500,
+        per_page: 500,
+        page_size: 500,
+      },
     });
   });
 
@@ -94,6 +106,47 @@ describe('fetchNexGames', () => {
 
     const games = await fetchNexGames();
     expect(games[0].thumbnail_url).toBe('https://img.youtube.com/vi/dNfACINSbOU/hqdefault.jpg');
+  });
+
+  it('loads additional pages when backend paginates at 20 items', async () => {
+    const pageOne = Array.from({ length: 20 }, (_, idx) => ({
+      id: idx + 1,
+      name: `Game ${idx + 1}`,
+      category: 'Action',
+      thumbnail_url: 'https://example.com/thumb.jpg',
+      status: 'ACTIVE',
+    }));
+    const pageTwo = Array.from({ length: 5 }, (_, idx) => ({
+      id: idx + 21,
+      name: `Game ${idx + 21}`,
+      category: 'Action',
+      thumbnail_url: 'https://example.com/thumb.jpg',
+      status: 'ACTIVE',
+    }));
+
+    mockedClient.get
+      .mockResolvedValueOnce({ data: pageOne })
+      .mockResolvedValueOnce({ data: pageTwo });
+
+    const games = await fetchNexGames();
+    expect(games).toHaveLength(25);
+    expect(mockedClient.get).toHaveBeenNthCalledWith(1, '/api/nex-games/', {
+      params: {
+        status: 'active',
+        limit: 500,
+        per_page: 500,
+        page_size: 500,
+      },
+    });
+    expect(mockedClient.get).toHaveBeenNthCalledWith(2, '/api/nex-games/', {
+      params: {
+        status: 'active',
+        limit: 500,
+        per_page: 500,
+        page_size: 500,
+        page: 2,
+      },
+    });
   });
 });
 
