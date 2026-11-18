@@ -30,6 +30,11 @@ export type GamesStackParamList = {
   NexSessionContact: { gameId: string };
   NexPlaygroundTimeSelection: { gameId: string };
   NexPlaygroundSessionSummary: { sessionId: string };
+
+  // ── PS5 package pricing flow ─────────────────────────────────────────────
+  PS5Pricing: undefined;
+  PS5SessionContact: undefined;
+  PS5SessionSummary: undefined;
 };
 
 /** Root bottom-tab navigator. */
@@ -58,3 +63,6 @@ export type NexPlaygroundDetailProps = NativeStackScreenProps<GamesStackParamLis
 export type NexSessionContactProps = NativeStackScreenProps<GamesStackParamList, 'NexSessionContact'>;
 export type NexPlaygroundTimeSelectionProps = NativeStackScreenProps<GamesStackParamList, 'NexPlaygroundTimeSelection'>;
 export type NexPlaygroundSessionSummaryProps = NativeStackScreenProps<GamesStackParamList, 'NexPlaygroundSessionSummary'>;
+export type PS5PricingProps = NativeStackScreenProps<GamesStackParamList, 'PS5Pricing'>;
+export type PS5SessionContactProps = NativeStackScreenProps<GamesStackParamList, 'PS5SessionContact'>;
+export type PS5SessionSummaryProps = NativeStackScreenProps<GamesStackParamList, 'PS5SessionSummary'>;

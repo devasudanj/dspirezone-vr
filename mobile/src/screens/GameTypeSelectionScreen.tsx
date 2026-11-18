@@ -20,12 +20,12 @@ import { trackGameTypeSelected } from '../utils/analytics';
 import type { GameTypeSelectionProps } from '../navigation/types';
 
 interface PlatformOption {
-  id: 'VR' | 'NEX_PLAYGROUND';
+  id: 'VR' | 'NEX_PLAYGROUND' | 'PS5';
   title: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
   accentColor: string;
-  destination: 'GameLibrary' | 'NexPlaygroundLibrary';
+  destination: 'GameLibrary' | 'NexPlaygroundLibrary' | 'PS5Pricing';
 }
 
 const PLATFORMS: PlatformOption[] = [
@@ -44,6 +44,14 @@ const PLATFORMS: PlatformOption[] = [
     icon: 'glasses-outline',
     accentColor: Colors.primary,
     destination: 'GameLibrary',
+  },
+  {
+    id: 'PS5',
+    title: 'PS5 Packages',
+    subtitle: 'Hourly and group pricing\nwith special GTA offers',
+    icon: 'game-controller-outline',
+    accentColor: Colors.warning,
+    destination: 'PS5Pricing',
   },
 ];
 
@@ -124,12 +132,15 @@ const styles = StyleSheet.create({
   },
   optionsRow: {
     flexDirection: 'row',
-    gap: 24,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
     width: '100%',
-    maxWidth: 800,
+    maxWidth: 980,
   },
   card: {
-    flex: 1,
+    width: '31%',
+    minWidth: 220,
     backgroundColor: Colors.surface,
     borderRadius: 20,
     borderWidth: 2,

@@ -29,6 +29,9 @@ import GameDetailScreen from '../screens/GameDetailScreen';
 import SessionContactScreen from '../screens/SessionContactScreen';
 import TimeSelectionScreen from '../screens/TimeSelectionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
+import PS5PricingScreen from '../screens/PS5PricingScreen';
+import PS5SessionContactScreen from '../screens/PS5SessionContactScreen';
+import PS5SessionSummaryScreen from '../screens/PS5SessionSummaryScreen';
 
 // Nex Playground flow screens
 import NexPlaygroundLibraryScreen from '../screens/NexPlaygroundLibraryScreen';
@@ -110,6 +113,23 @@ function GamesNavigator() {
       <GamesStack.Screen
         name="NexPlaygroundSessionSummary"
         component={NexPlaygroundSessionSummaryScreen}
+        options={{ title: 'Session Confirmed', headerBackVisible: false }}
+      />
+
+      {/* ── PS5 package pricing flow ─────────────────────────────────────── */}
+      <GamesStack.Screen
+        name="PS5Pricing"
+        component={PS5PricingScreen}
+        options={{ title: 'PS5 Packages' }}
+      />
+      <GamesStack.Screen
+        name="PS5SessionContact"
+        component={PS5SessionContactScreen}
+        options={{ title: 'Your Details' }}
+      />
+      <GamesStack.Screen
+        name="PS5SessionSummary"
+        component={PS5SessionSummaryScreen}
         options={{ title: 'Session Confirmed', headerBackVisible: false }}
       />
     </GamesStack.Navigator>

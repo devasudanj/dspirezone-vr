@@ -6,7 +6,7 @@
  */
 
 /** Distinguishes which gaming platform a flow belongs to. */
-export type GamePlatform = 'VR' | 'NEX_PLAYGROUND';
+export type GamePlatform = 'VR' | 'NEX_PLAYGROUND' | 'PS5';
 
 export type GameStatus = 'ACTIVE' | 'EXPIRED' | 'DISABLED';
 
