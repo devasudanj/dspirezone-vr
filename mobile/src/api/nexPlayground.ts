@@ -319,16 +319,16 @@ export async function fetchNexGames(
   // Send broadly compatible page-size hints so we can retrieve the full list.
   const params: Record<string, string | number> = {
     status: 'active',
-    limit: 500,
-    per_page: 500,
-    page_size: 500,
+    limit: 100,
+    per_page: 100,
+    page_size: 100,
   };
   if (category) params.category = category;
 
   const items: NexGamesListRawItem[] = [];
   const seenIds = new Set<string>();
-  const PAGE_SIZE_FALLBACK = 20;
-  const MAX_PAGES = 30;
+  const PAGE_SIZE_FALLBACK = 100;
+  const MAX_PAGES = 5;
 
   for (let page = 1; page <= MAX_PAGES; page += 1) {
     const pageParams = page === 1 ? params : { ...params, page };

@@ -9,13 +9,13 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import YoutubeIframe from 'react-native-youtube-iframe';
 
@@ -135,7 +135,7 @@ export default function NexPlaygroundDetailScreen({
             <Image
               source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/600x340' }}
               style={styles.thumbnail}
-              contentFit="cover"
+              resizeMode="cover"
             />
           )}
           <ScrollView style={styles.descScroll} contentContainerStyle={styles.descContent}>

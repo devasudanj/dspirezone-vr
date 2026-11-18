@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,7 +16,6 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Image } from 'expo-image';
 
 import { fetchNexGames } from '../api/nexPlayground';
 import Colors from '../theme/colors';
@@ -56,7 +56,7 @@ function NexGameCard({ game, onPress }: CardProps) {
       <Image
         source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/300x180' }}
         style={styles.thumbnail}
-        contentFit="cover"
+        resizeMode="cover"
       />
       {isUnavailable && (
         <View style={styles.overlay}>
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   cardUnavailable: { opacity: 0.5 },
   thumbnail: { width: '100%', height: 140, backgroundColor: Colors.surfaceAlt },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',

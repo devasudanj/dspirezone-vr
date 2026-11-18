@@ -68,9 +68,9 @@ describe('fetchNexGames', () => {
       params: {
         status: 'active',
         category: 'Dance',
-        limit: 500,
-        per_page: 500,
-        page_size: 500,
+        limit: 100,
+        per_page: 100,
+        page_size: 100,
       },
     });
   });
@@ -83,9 +83,9 @@ describe('fetchNexGames', () => {
       params: {
         status: 'active',
         category: 'Multiplayer',
-        limit: 500,
-        per_page: 500,
-        page_size: 500,
+        limit: 100,
+        per_page: 100,
+        page_size: 100,
       },
     });
   });
@@ -133,17 +133,17 @@ describe('fetchNexGames', () => {
     expect(mockedClient.get).toHaveBeenNthCalledWith(1, '/api/nex-games/', {
       params: {
         status: 'active',
-        limit: 500,
-        per_page: 500,
-        page_size: 500,
+        limit: 100,
+        per_page: 100,
+        page_size: 100,
       },
     });
     expect(mockedClient.get).toHaveBeenNthCalledWith(2, '/api/nex-games/', {
       params: {
         status: 'active',
-        limit: 500,
-        per_page: 500,
-        page_size: 500,
+        limit: 100,
+        per_page: 100,
+        page_size: 100,
         page: 2,
       },
     });

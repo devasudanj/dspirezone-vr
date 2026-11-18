@@ -6,12 +6,12 @@
  */
 import React from 'react';
 import {
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import Colors from '../theme/colors';
 import Typography from '../theme/typography';
 import type { GameListItem } from '../types';
@@ -36,7 +36,7 @@ export default function GameCard({ game, onPress }: Props) {
       <Image
         source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/300x180' }}
         style={styles.thumbnail}
-        contentFit="cover"
+        resizeMode="cover"
       />
 
       {/* Status overlay for non-active games */}

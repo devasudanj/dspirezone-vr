@@ -11,13 +11,13 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import YoutubeIframe from 'react-native-youtube-iframe';
 
@@ -163,7 +163,7 @@ export default function GameDetailScreen({ route, navigation }: GameDetailProps)
             <Image
               source={{ uri: game.thumbnail_url || 'https://via.placeholder.com/800x450' }}
               style={styles.thumbnailFallback}
-              contentFit="cover"
+              resizeMode="cover"
             />
           )}
         </View>
