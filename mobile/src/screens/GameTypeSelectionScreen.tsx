@@ -7,9 +7,11 @@
  */
 import React from 'react';
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +28,7 @@ interface PlatformOption {
   icon: keyof typeof Ionicons.glyphMap;
   accentColor: string;
   destination: 'GameLibrary' | 'NexPlaygroundLibrary' | 'PS5Pricing';
+  discountText: string;
 }
 
 const PLATFORMS: PlatformOption[] = [
@@ -36,6 +39,7 @@ const PLATFORMS: PlatformOption[] = [
     icon: 'body-outline',
     accentColor: Colors.accent,
     destination: 'NexPlaygroundLibrary',
+    discountText: 'Special Offer',
   },
   {
     id: 'VR',
@@ -44,6 +48,7 @@ const PLATFORMS: PlatformOption[] = [
     icon: 'glasses-outline',
     accentColor: Colors.primary,
     destination: 'GameLibrary',
+    discountText: 'Special Offer',
   },
   {
     id: 'PS5',
@@ -52,19 +57,29 @@ const PLATFORMS: PlatformOption[] = [
     icon: 'game-controller-outline',
     accentColor: Colors.warning,
     destination: 'PS5Pricing',
+    discountText: 'Special Offer',
   },
 ];
 
 export default function GameTypeSelectionScreen({
   navigation,
 }: GameTypeSelectionProps) {
+  const { width } = useWindowDimensions();
+  const isPhone = width < 900;
+
   const handleSelect = (option: PlatformOption) => {
     trackGameTypeSelected(option.id);
     navigation.navigate(option.destination);
   };
 
   return (
-    <View style={styles.container} accessibilityRole="none">
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      accessibilityRole="none"
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+    >
       <Text style={styles.heading} accessibilityRole="header">
         Choose Your Experience
       </Text>
@@ -72,11 +87,15 @@ export default function GameTypeSelectionScreen({
         Select a game type to get started
       </Text>
 
-      <View style={styles.optionsRow}>
+      <View style={[styles.optionsRow, isPhone && styles.optionsColumn]}>
         {PLATFORMS.map((option) => (
           <TouchableOpacity
             key={option.id}
-            style={[styles.card, { borderColor: option.accentColor }]}
+            style={[
+              styles.card,
+              { borderColor: option.accentColor },
+              isPhone ? styles.cardPhone : styles.cardTablet,
+            ]}
             onPress={() => handleSelect(option)}
             activeOpacity={0.75}
             accessibilityRole="button"
@@ -92,9 +111,21 @@ export default function GameTypeSelectionScreen({
                 color={option.accentColor}
               />
             </View>
-            <Text style={[styles.cardTitle, { color: option.accentColor }]}>
-              {option.title}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text style={[styles.cardTitle, { color: option.accentColor }]}> 
+                {option.title}
+              </Text>
+              <View style={styles.offerBadgeWrap}>
+                <View style={styles.offerBadgeOuter}>
+                  <View style={styles.offerBadgeInner}>
+                    <Ionicons name="star" size={10} color={Colors.warning} style={styles.offerStarTop} />
+                    <Ionicons name="star" size={9} color={Colors.warning} style={styles.offerStarBottom} />
+                    <Text style={styles.offerTopText}>SPECIAL</Text>
+                    <Text style={styles.offerBottomText}>OFFER</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
             <Text style={styles.cardSubtitle}>{option.subtitle}</Text>
             <View style={[styles.ctaButton, { backgroundColor: option.accentColor }]}>
               <Text style={styles.ctaText}>Browse Games</Text>
@@ -103,7 +134,11 @@ export default function GameTypeSelectionScreen({
           </TouchableOpacity>
         ))}
       </View>
-    </View>
+
+      <View style={styles.footerPromoWrap}>
+        <Text style={styles.footerPromoText}>upto 50% off on most games..</Text>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -111,8 +146,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  scrollContent: {
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 32,
     paddingVertical: 24,
   },
@@ -138,9 +174,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 980,
   },
+  optionsColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
   card: {
-    width: '31%',
-    minWidth: 220,
     backgroundColor: Colors.surface,
     borderRadius: 20,
     borderWidth: 2,
@@ -148,6 +186,71 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 24,
     gap: 16,
+  },
+  cardPhone: {
+    width: '100%',
+    maxWidth: 420,
+  },
+  cardTablet: {
+    width: '31%',
+    minWidth: 220,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    width: '100%',
+  },
+  offerBadgeWrap: {
+    marginTop: -2,
+  },
+  offerBadgeOuter: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: '#FF3F5F',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF4B6E',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6,
+  },
+  offerBadgeInner: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#252A4A',
+    borderWidth: 2,
+    borderColor: '#3A4270',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  offerStarTop: {
+    position: 'absolute',
+    top: 3,
+    right: 5,
+  },
+  offerStarBottom: {
+    position: 'absolute',
+    bottom: 5,
+    left: 4,
+  },
+  offerTopText: {
+    color: '#DDE4FF',
+    fontSize: 8,
+    fontWeight: Typography.extrabold,
+    letterSpacing: 0.5,
+  },
+  offerBottomText: {
+    color: '#FFD84D',
+    fontSize: 8,
+    fontWeight: Typography.extrabold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   iconCircle: {
     width: 100,
@@ -161,6 +264,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.xl,
     fontWeight: Typography.bold,
     textAlign: 'center',
+    flexShrink: 1,
   },
   cardSubtitle: {
     fontSize: Typography.sm,
@@ -182,5 +286,22 @@ const styles = StyleSheet.create({
     fontSize: Typography.base,
     fontWeight: Typography.semibold,
     color: Colors.textOnPrimary,
+  },
+  footerPromoWrap: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#311435',
+    borderWidth: 1,
+    borderColor: '#FF4FD8',
+  },
+  footerPromoText: {
+    color: '#FFD84D',
+    fontSize: Typography.base,
+    fontWeight: Typography.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    textAlign: 'center',
   },
 });
